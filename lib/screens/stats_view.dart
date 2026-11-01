@@ -1155,7 +1155,6 @@ class _ManualLogDialogState extends State<_ManualLogDialog> {
     try {
       final st = context.read<AppState>();
       await st.api.logManualStudy(
-        subjectId: _subject!.id,
         subjectTitle: _subject!.title,
         startAt: _at(_start!),
         stopAt: _at(_end!),

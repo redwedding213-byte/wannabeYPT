@@ -396,12 +396,12 @@ class YptApi {
     }
   }
 
-  /// POST /logs/v2/study/manual — a manual study record. Returns true
-  /// on s == true, else throws with the server's message when present.
+  /// POST /study/add — a manual study record (retroactive session).
+  /// Returns true on s == true, else throws with the server's message
+  /// when present. End time is not sent; it is implied by stm + ms.
   /// The caller supplies user-entered values only: no auto-fill, no
   /// defaults that inflate time.
   Future<bool> logManualStudy({
-    required int subjectId,
     required String subjectTitle,
     required DateTime startAt,
     required DateTime stopAt,
@@ -410,17 +410,16 @@ class YptApi {
     if (studyMs <= 0) {
       throw const YptApiException('End time must be after start time.');
     }
-    final r = await _post('/logs/v2/study/manual', {
-      'subject_id': subjectId,
-      'subject': subjectTitle,
-      'startedAt': startAt.millisecondsSinceEpoch,
-      'stopAt': stopAt.millisecondsSinceEpoch,
-      'study_ms': studyMs,
-      'deviceModel': deviceModel,
-      'language': 'en',
+    final date = '${startAt.year}-${startAt.month}-${startAt.day}';
+    final r = await _post('/study/add', {
+      'sb': subjectTitle,
+      'date': date,
+      'ms': studyMs,
+      'stm': startAt.millisecondsSinceEpoch,
+      'addVersion': false,
     });
     if (r.statusCode != 200) {
-      throw YptApiException('logs/v2/study/manual HTTP ${r.statusCode}');
+      throw YptApiException('study/add HTTP ${r.statusCode}');
     }
     final j = _decodeObject(r);
     if (j['s'] == true) return true;
