@@ -1,0 +1,67 @@
+// wannabeYPT — notification bridge (web implementation)
+// Copyright (C) 2026 redwedding
+//
+// This file is part of wannabeYPT. This program is free software: you can
+// redistribute it and/or modify it under the terms of the GNU Affero General
+// Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
+
+JSFunction? _fn(String name) {
+  try {
+    final v = globalContext.getProperty(name.toJS);
+    if (v == null) return null;
+    return v as JSFunction;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Unlocks the shared WebAudio context from a user gesture, so the
+/// phase-end beep actually sounds later (a context first created at
+/// phase-end time, with no gesture in progress, may stay suspended).
+void unlockAudio() {
+  try {
+    _fn('yptUnlockAudio')?.callAsFunction(null);
+  } catch (_) {}
+}
+
+/// Shows a browser notification (and beep) via window.yptNotify.
+void showAppNotification(String title, String body) {
+  try {
+    _fn('yptNotify')?.callAsFunction(null, title.toJS, body.toJS);
+  } catch (_) {}
+}
+
+/// Current Notification.permission without prompting.
+String notifyPermissionState() {
+  try {
+    final r = _fn('yptNotifyState')?.callAsFunction(null);
+    if (r != null && r.isA<JSString>()) return (r as JSString).toDart;
+  } catch (_) {}
+  return 'unknown';
+}
+
+/// Asks for notification permission; resolves to the resulting state
+/// ('granted' / 'denied' / 'default' / 'unsupported').
+Future<String> requestNotifyPermission() async {
+  try {
+    final f = _fn('yptNotifyPerm');
+    if (f == null) return 'unsupported';
+    final res = f.callAsFunction(null);
+    if (res != null && res.isA<JSPromise<JSString>>()) {
+      final v = await (res as JSPromise<JSString>).toDart;
+      return v.toDart;
+    }
+  } catch (_) {}
+  return notifyPermissionState();
+}

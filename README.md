@@ -1,168 +1,115 @@
-# YPT Desktop Client
+# wannabeYPT
 
-Unofficial Flutter desktop client, Flutter web demo, and Next.js landing page
-for YPT / 열품타.
+YPT (열품타) in your browser. The official app has no web or PC version, so
+this is an unofficial web client: your real YPT account — timers, groups,
+stats — running in a browser tab. Live at
+<https://wannabeypt.vercel.app>.
 
-[Korean README](README_ko.md)
+Built on the open-source client
+[deveworld/ypt_client](https://github.com/deveworld/ypt_client) (MIT),
+with the web layer, Google login, stats, planner and group features added
+on top. Full credit to deveworld for the base client — see NOTICE.
 
-![YPT Desktop Client landing hero](landing/public/hero-dashboard.png)
+Honestly built: the code was written by an AI assistant under the
+project owner's direction; the idea, name, design, features, testing and
+launch are his.
 
 ## Important Notice
 
-- This project is **unofficial** and is not affiliated with, sponsored by, or
-  endorsed by YPT, Pallo Inc., or related rights holders.
-- It is intended only for personal-account interop. It is not intended for
-  manipulating another account, automation abuse, or study-time fabrication.
-- The client talks to YPT's undocumented HTTPS API at `pi.tgclab.com`.
-  Behavior can break without warning and may conflict with service terms.
-- Email and password are used for the YPT login request. The login JWT is stored
-  locally through `shared_preferences`.
-- Also, I used Codex (GPT 5.5) for the document part, and got some advice from Claude AI on APK reverse engineering.
+- This project is **unofficial**. It is not affiliated with, sponsored by,
+  or endorsed by YPT, Pallo Inc., or related rights holders.
+- It is intended only for your own account's interop — real timers on the
+  real service. It is not for manipulating another account, automation
+  abuse, or study-time fabrication.
+- It talks to YPT's undocumented HTTPS API at `pi.tgclab.com`. Behavior can
+  break without warning and may conflict with the service's terms.
+- Login goes from your browser straight to YPT's servers. The session JWT
+  is stored in your browser's localStorage (`flutter.jwt`). Nobody else's
+  server sees your password.
 
 ## What It Does
 
-YPT Desktop Client lets you use core YPT study flows from a desktop-shaped
-interface:
+- Email + Google login (Google via the `/google-login.html` OAuth helper —
+  exchanges your Google profile for a YPT JWT, written to localStorage)
+- Per-subject study timer with D-Day chip and device-local daily goal
+- Rebuilt Statistics: month heatmap, day detail, week/month/trend views
+- Planner tab: week strip, day timetable from sessions, per-day to-dos
+  (server tasks are read-only; web-added ones live on-device)
+- Group room: Home / Attendance / Rankings / Invite (QR + invite link)
+- Member profiles as a right-side panel; self-profile with focus heatmap
+- Pomodoro panel with focus/break steppers and phase-end notifications
+- Classic YPT look, kept deliberately familiar
 
-- Email login with local JWT auto-login
-- Per-subject study timer start and stop
-- Daily study time, subject totals, and category ranking
-- Joined groups, browsable groups, and group member activity
-- Flutter desktop build targets for Linux, Windows, and macOS
-- Flutter web build mounted under the landing page at `/demo/`
+Deliberately not built: Books/flashcards, group chat, Challenge, Music,
+Timelapse. All server writes except timer start/stop are closed — the app
+is read + timer start/stop only.
 
-## Download From GitHub Releases
-
-Prebuilt desktop assets are attached to
-[GitHub Releases](https://github.com/deveworld/ypt_client/releases):
-
-- Linux x64 `.tar.gz` plus `.sha256`
-- Windows x64 `.zip` plus `.sha256`
-- macOS x64 `.zip` plus `.sha256`
-
-These are packaged Flutter build outputs. The current workflow does not sign or notarize installers.
-
-You may need libwebkit2gtk-4.1-0
-
-## Build From Source
-
-Run a Linux desktop development build:
-
-```bash
-flutter doctor
-flutter pub get
-flutter run -d linux
-```
-
-Build a Linux release locally:
-
-```bash
-flutter build linux --release
-```
-
-The Linux executable bundle is generated under:
-
-```text
-build/linux/x64/release/bundle/
-```
-
-Desktop builds should be produced on the matching host OS. For cross-platform
-release assets, use the GitHub Actions workflow described below.
-
-## Web Demo And Landing
-
-The project has two web surfaces:
-
-- `web/`: Flutter web target for the app demo
-- `landing/`: static Next.js landing page
-
-Run the landing page locally:
-
-```bash
-cd landing
-npm ci
-npm run dev
-```
-
-Build the static landing page:
-
-```bash
-cd landing
-npm run build
-```
-
-Build the Flutter web demo manually:
+## Build & Deploy
 
 ```bash
 flutter pub get
-flutter build web --release --base-href /demo/
+flutter build web --release
 ```
 
-The GitHub Pages workflow builds both surfaces, copies `build/web/` into
-`landing/out/demo/`, and deploys `landing/out`.
+Every deploy must also copy the three static files into the deploy root:
 
-## GitHub Actions
+- `static/google-login.html` — Google OAuth helper for YPT login
+- `static/privacy.html` — Privacy policy
+- `static/terms.html` — Terms of service
 
-### Pages Deploy
+```bash
+cp static/google-login.html static/privacy.html static/terms.html <deploy-root>/
+```
 
-`.github/workflows/deploy-web.yml` runs on `main` when these areas change:
+The deployed Flutter output on this machine is staged at
+`~/workspace/ypt-web-dist` and pushed to Vercel with:
 
-- `landing/**`
-- `web/**`
-- `lib/**`
-- `pubspec.yaml`
-- `pubspec.lock`
-- the deploy workflow itself
+```bash
+python3 skills/vercel-deploy/bin/deploy.py ypt-web-dist --project ypt-web
+```
 
-The workflow builds `landing/` as a static Next.js export, builds the Flutter
-web demo from the root `web/` target, copies `build/web/` into
-`landing/out/demo/`, and deploys `landing/out/`.
-
-For project Pages repositories, the workflow uses `/<repo>` as the Next.js base
-path and `/<repo>/demo/` as the Flutter web base href. For `*.github.io`
-repositories, it uses the domain root and `/demo/`.
-
-### Prebuilt Desktop Release Assets
-
-`.github/workflows/release-desktop.yml` is a manual `workflow_dispatch`
-workflow. Give it an existing GitHub Release tag, and it builds/uploads:
-
-- Linux x64 `.tar.gz` plus `.sha256`
-- Windows x64 `.zip` plus `.sha256`
-- macOS x64 `.zip` plus `.sha256`
-
-The workflow uses OS-specific GitHub-hosted runners. Flutter desktop does not
-support building Windows and macOS desktop apps from a Linux host just by
-installing another compiler toolchain.
+Note for future maintainers: the Flutter web build needs
+`TAR_OPTIONS=--no-same-owner` when the SDK archive is extracted as root.
 
 ## Project Layout
 
 ```text
-lib/                       Flutter app source
-  app_state.dart           Provider state for auth, timer, stats, groups
-  ypt_api.dart             YPT API client
-  models.dart              API response models
-  screens/                 Login, home, timer, stats, group screens
-
-linux/                     Flutter Linux desktop target
-macos/                     Flutter macOS desktop target
-windows/                   Flutter Windows desktop target
-web/                       Flutter web demo target
-landing/                   Next.js static landing page
-.github/workflows/         Pages deploy and desktop release workflows
+lib/                 Flutter app source
+  ypt_api.dart       YPT API client (undocumented API kept isolated here)
+  app_state.dart     Provider state: auth, timer, stats, groups
+  models.dart        API response models
+  screens/           login, home, timer, stats, planner, group room,
+                     member profiles
+  notify*.dart       Cross-platform notification bridge (web-only)
+static/              google-login.html, privacy.html, terms.html —
+                     copied into the deploy root on every deploy
+web/                 Flutter web target (title, manifest, icons)
+landing/             Leftover Next.js landing from the base client
+linux/ macos/        Flutter desktop targets (from the base client;
+windows/             desktop direction is Windows-first, future work)
 ```
 
-## Development Checklist
+## API Notes (hard-won)
 
-- Keep undocumented API behavior isolated in `lib/ypt_api.dart`.
-- Keep response parsing defensive; the API may change field names or value
-  types.
-- Run `flutter analyze` before shipping Flutter changes when the Flutter SDK is
-  available.
-- Run `npm run build` inside `landing/` before shipping landing page changes.
-- Run `flutter build web --release --base-href /demo/` before shipping web demo
-  changes.
+- Weekly ranks (`GET /logs/group/member/ranks?...&type=week`) only work
+  when `date` is the week's **Monday**; today's date or Sunday → empty.
+- The members endpoint ignores `&date`; per-day ranks routes silently omit
+  some members — match by `userId` **or** nickname.
+- `GET /logs/group/attendance` is a dead end (errors on every variant) —
+  the Attendance tab is built client-side from per-day type=day ranks calls.
+- A day log with `id: -1` is today; past days carry real ids.
+
+## Contributing
+
+Pull requests welcome. Keep undocumented API behavior isolated in
+`lib/ypt_api.dart`, parse defensively (the API changes field names without
+warning), and don't build write-paths that fake study data — read-only
+honesty about server limits is a standing rule.
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only).
+
+The base client it is built on (deveworld/ypt_client) is MIT licensed —
+see NOTICE for the original copyright and terms.

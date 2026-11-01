@@ -1,11 +1,11 @@
 {
-    "name": "YPT Web Demo",
-    "short_name": "YPT Demo",
+    "name": "wannabeYPT",
+    "short_name": "wannabeYPT",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0D0D0F",
     "theme_color": "#E8552D",
-    "description": "Unofficial YPT Desktop Client web demo.",
+    "description": "wannabeYPT — Yeolpumta in your browser — study timers, groups and stats synced with your YPT account. Unofficial web client.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -18,18 +18,18 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Unofficial YPT Desktop Client web demo.">
+  <meta name="description" content="wannabeYPT — Yeolpumta in your browser. Study timers, groups and stats, synced live with your YPT account. Unofficial web client.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="YPT Demo">
+  <meta name="apple-mobile-web-app-title" content="wannabeYPT">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>YPT Web Demo</title>
+  <title>wannabeYPT</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -41,6 +41,69 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <script>
+    // Notification + beep bridge for the Pomodoro end-of-phase alerts.
+    // yptUnlockAudio is called from user gestures (subject tap,
+    // Pomodoro toggle) so the shared context is running well before
+    // any phase ends; a context first created at phase-end time, with
+    // no gesture in progress, may stay suspended and sound nothing.
+    window.yptUnlockAudio = function () {
+      try {
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        var ctx = window._yptAudio || (window._yptAudio = new Ctx());
+        if (ctx.state === 'suspended') ctx.resume();
+      } catch (e) {}
+    };
+    window.yptBeep = function () {
+      try {
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        var ctx = window._yptAudio || (window._yptAudio = new Ctx());
+        var play = function () {
+          var t = ctx.currentTime;
+          for (var rep = 0; rep < 3; rep++) {
+            [880, 1174].forEach(function (f, i) {
+              var o = ctx.createOscillator(), g = ctx.createGain();
+              o.type = 'sine';
+              o.frequency.value = f;
+              var s = t + rep * 0.9 + i * 0.18;
+              g.gain.setValueAtTime(0.0001, s);
+              g.gain.exponentialRampToValueAtTime(0.22, s + 0.02);
+              g.gain.exponentialRampToValueAtTime(0.0001, s + 0.34);
+              o.connect(g); g.connect(ctx.destination);
+              o.start(s); o.stop(s + 0.36);
+            });
+          }
+        };
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(play).catch(function () {});
+        } else {
+          play();
+        }
+      } catch (e) {}
+    };
+    window.yptNotify = function (title, body) {
+      window.yptBeep();
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(title, { body: body, icon: 'icons/Icon-192.png' });
+        }
+      } catch (e) {}
+    };
+    window.yptNotifyState = function () {
+      if (!('Notification' in window)) return 'unsupported';
+      return Notification.permission;
+    };
+    window.yptNotifyPerm = function () {
+      if (!('Notification' in window)) return Promise.resolve('unsupported');
+      if (Notification.permission !== 'default') {
+        return Promise.resolve(Notification.permission);
+      }
+      return Notification.requestPermission();
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

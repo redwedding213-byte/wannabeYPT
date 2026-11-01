@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in with Google — wannabeYPT</title>
+<style>
+  body{margin:0;background:#0b0b0d;color:#f2f2f2;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}
+  .box{max-width:340px;width:90%;text-align:center;padding:24px}
+  .logo{width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,#ff7a18,#ff3d00);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#fff}
+  h1{font-size:26px;margin:6px 0 2px}
+  .sub{color:#9a9aa0;font-size:13px;margin-bottom:28px}
+  button{width:100%;padding:14px;border:none;border-radius:12px;background:#fff;color:#1f1f1f;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+  button:disabled{opacity:.55;cursor:default}
+  #status{margin-top:18px;font-size:13px;line-height:1.55;color:#c9c9ce;white-space:pre-wrap;word-break:break-word;min-height:20px}
+  .err{color:#ff8a80 !important}
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div class="box">
+  <div class="logo">▶</div>
+  <h1>YPT</h1>
+  <div class="sub">Yeolpumta Desktop</div>
+  <button id="gbtn" disabled>
+    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.3 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.3 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+    Continue with Google
+  </button>
+  <div id="status">Loading…</div>
+</div>
+<script>
+var GOOGLE_CLIENT_ID = "757089188268-547djulbv6sejcdvbjqn9c2qocgi4eo3.apps.googleusercontent.com";
+var YPT_BASE = "https://pi.tgclab.com";
+var statusEl = document.getElementById("status");
+var btn = document.getElementById("gbtn");
+function setStatus(t, isErr){ statusEl.textContent = t; statusEl.className = isErr ? "err" : ""; }
+var tokenClient = null;
+function gisReady(){
+  if (typeof google === "undefined" || !google.accounts || !google.accounts.oauth2) { setTimeout(gisReady, 200); return; }
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: "openid email profile",
+    callback: onToken,
+    error_callback: function(e){ setStatus("Google sign-in failed: " + (e && e.type ? e.type : "unknown"), true); btn.disabled = false; }
+  });
+  btn.disabled = false;
+  setStatus("");
+}
+async function onToken(resp){
+  if (!resp || !resp.access_token){ setStatus("No access token from Google. Try again.", true); btn.disabled = false; return; }
+  try {
+    setStatus("Google OK. Fetching your profile…");
+    var ui = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { "Authorization": "Bearer " + resp.access_token } });
+    var profile = await ui.json();
+    if (!profile.sub) { setStatus("Could not read Google profile: " + JSON.stringify(profile), true); btn.disabled = false; return; }
+    setStatus("Profile OK (" + (profile.email || "") + "). Asking YPT to sign you in…");
+    var r = await fetch(YPT_BASE + "/user/social/sign-up-jwt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken: resp.access_token,
+        providerId: "g" + profile.sub,
+        email: profile.email || "",
+        loginProvider: "Google",
+        "new": true,
+        getx: true,
+        version: 810046
+      })
+    });
+    var j = await r.json().catch(function(){ return null; });
+    if (j && j.s === true && j.jwt) {
+      try { localStorage.setItem("flutter.jwt", JSON.stringify(j.jwt)); } catch(e) {}
+      setStatus("YPT accepted. Opening your account…");
+      setTimeout(function(){ location.replace("/"); }, 600);
+    } else {
+      setStatus("YPT did not accept the sign-in. Response: " + JSON.stringify(j) + "\n\nScreenshot this and send it to me.", true);
+      btn.disabled = false;
+    }
+  } catch (e) {
+    setStatus("Error: " + e.message + "\n\nScreenshot this and send it to me.", true);
+    btn.disabled = false;
+  }
+}
+btn.addEventListener("click", function(){
+  if (!tokenClient) return;
+  btn.disabled = true;
+  setStatus("Opening Google sign-in…");
+  tokenClient.requestAccessToken({ prompt: "select_account" });
+});
+window.addEventListener("load", gisReady);
+</script>
+</body>
+</html>

@@ -26,33 +26,28 @@ class _GroupsViewState extends State<GroupsView> {
     return RefreshIndicator(
       onRefresh: () => context.read<AppState>().loadGroups(),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
         children: [
           if (st.groupsErrorText != null) ...[
             Text(st.groupsErrorText!,
                 style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
             const SizedBox(height: 12),
           ],
-          if (st.joinedGroups.isNotEmpty) ...[
-            const _SectionTitle('My Groups'),
-            ...st.joinedGroups.map((g) => _GroupCard(group: g, joined: true)),
-            const SizedBox(height: 20),
-          ],
-          const _SectionTitle('Browse Groups'),
-          if (st.groupsLoading && st.groups.isEmpty)
+          const _SectionTitle('My groups'),
+          if (st.groupsLoading && st.joinedGroups.isEmpty)
             const Center(
                 child: Padding(
                     padding: EdgeInsets.all(24),
                     child: CircularProgressIndicator()))
-          else if (st.groups.isEmpty)
+          else if (st.joinedGroups.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
-                  child: Text('No groups found',
+                  child: Text('No groups yet',
                       style: TextStyle(color: Colors.grey[600]))),
             )
           else
-            ...st.groups.map((g) => _GroupCard(group: g, joined: false)),
+            ...st.joinedGroups.map((g) => _GroupCard(group: g, joined: true)),
         ],
       ),
     );
@@ -77,65 +72,171 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: kCard,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => GroupRoomScreen(group: group))),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                      color: kBrand.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.groups_rounded, color: kBrand),
+    // Official style: a flat text row, no card — title, then one grey
+    // meta line (category · owner). The rounded InkWell matters on
+    // web: without it the hover highlight is a square-cornered band.
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => GroupRoomScreen(group: group))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(group.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 15.5, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 3),
+            Text(
+                '${group.category.isNotEmpty ? '${group.category} · ' : ''}'
+                '${group.owner}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.grey[500], fontSize: 12.5)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Browse + search public groups (the Groups tab's round button).
+/// Tapping a result opens its room — members are readable without
+/// joining; joining itself stays in the official app.
+class GroupSearchPage extends StatefulWidget {
+  const GroupSearchPage({super.key});
+  @override
+  State<GroupSearchPage> createState() => _GroupSearchPageState();
+}
+
+class _GroupSearchPageState extends State<GroupSearchPage> {
+  final _query = TextEditingController();
+  List<Group> _all = [];
+  bool _loading = true;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final st = context.read<AppState>();
+      final countryId = st.user!.countryId;
+      final out = <Group>[];
+      final seen = <int>{};
+      for (var page = 1; page <= 4; page++) {
+        final gs = await st.api.browseGroups(countryId, page: page);
+        if (gs.isEmpty) break;
+        for (final g in gs) {
+          if (seen.add(g.id)) out.add(g);
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _all = out;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _failed = true;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final st = context.watch<AppState>();
+    final joinedIds = st.joinedGroups.map((g) => g.id).toSet();
+    final q = _query.text.trim().toLowerCase();
+    final results = q.isEmpty
+        ? _all
+        : _all
+            .where((g) =>
+                g.title.toLowerCase().contains(q) ||
+                g.owner.toLowerCase().contains(q) ||
+                g.category.toLowerCase().contains(q))
+            .toList();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Find groups', style: TextStyle(fontSize: 17)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: TextField(
+              controller: _query,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Search groups',
+                hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                prefixIcon:
+                    Icon(Icons.search, size: 20, color: Colors.grey[500]),
+                filled: true,
+                fillColor: kCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(group.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 3),
-                      Text(
-                          '${group.category.isNotEmpty ? '${group.category} · ' : ''}'
-                          'owner ${group.owner}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              TextStyle(color: Colors.grey[500], fontSize: 12)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (joined) ...[
-                  const Icon(Icons.check_circle, size: 16, color: kBrand),
-                  const SizedBox(width: 8),
-                ],
-                Column(
-                  children: [
-                    const Icon(Icons.person, size: 14, color: Colors.grey),
-                    Text('${group.memberCount}',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-                  ],
-                ),
-                const Icon(Icons.chevron_right, color: Colors.grey),
-              ],
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              style: const TextStyle(fontSize: 14.5),
             ),
           ),
-        ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _failed
+                    ? Center(
+                        child: Text('Could not load groups',
+                            style: TextStyle(color: Colors.grey[500])))
+                    : results.isEmpty
+                        ? Center(
+                            child: Text('No groups found',
+                                style: TextStyle(color: Colors.grey[500])))
+                        : ListView.builder(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: results.length,
+                            itemBuilder: (_, i) {
+                              final g = results[i];
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                      child:
+                                          _GroupCard(group: g, joined: false)),
+                                  if (joinedIds.contains(g.id))
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 10),
+                                      child: Text('Joined',
+                                          style: TextStyle(
+                                              color: kBrand,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w600)),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+          ),
+        ],
       ),
     );
   }

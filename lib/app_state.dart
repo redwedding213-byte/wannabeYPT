@@ -1,12 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'ypt_api.dart';
 import 'models.dart';
+import 'notify.dart';
 import 'social_auth.dart';
 
 class AppState extends ChangeNotifier {
   final YptApi api = YptApi();
+
+  AppState() {
+    _loadLocal();
+  }
   UserData? user;
   bool loading = false;
   String? errorText;
@@ -43,6 +49,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       user = await api.reloadInfo();
+      // Fresh server state is ground truth: drop optimistic toggles
+      // the server now agrees with; keep the rest (propagation lag).
+      if (_serverDoneOverrides.isNotEmpty) {
+        final fresh = <int, bool>{
+          for (final t in user?.tasks ?? const <YptTask>[]) t.id: t.done
+        };
+        _serverDoneOverrides.removeWhere((id, v) => fresh[id] == v);
+      }
       await _refreshSubjectTimesQuietly();
     } catch (e) {
       errorText = 'Could not load subjects: ${_readableError(e)}';
@@ -78,7 +92,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       joinedGroups = await api.myGroups();
-      groups = await api.browseGroups(user!.countryId);
+      groups = const [];
     } catch (e) {
       groupsErrorText = 'Could not load groups: ${_readableError(e)}';
     }
@@ -88,6 +102,449 @@ class AppState extends ChangeNotifier {
 
   Future<List<GroupMember>> fetchMembers(int groupId) =>
       api.groupMembers(groupId, user!.countryId);
+
+  Future<List<Map<String, dynamic>>> fetchMembersRaw(int groupId) =>
+      api.groupMembersRaw(groupId, user!.countryId);
+
+  // ── Local settings (device-only): D-Day, daily goal ──────────────
+  String? ddayStr; // yyyy-MM-dd
+  int goalMinutes = 0;
+
+  // ── Pomodoro ─────────────────────────────────────────────────────
+  bool pomoOn = false;
+  int focusMin = 25;
+  int breakMin = 5;
+  int longBreakMin = 15;
+  int cyclesBeforeLong = 4;
+  int pomoCycles = 0; // completed focus rounds in the current run
+  bool pomoBreakLong = false; // the running break is a long one
+  String pomoPhase = 'idle'; // idle | focus | break
+  DateTime? _phaseEndsAt;
+  Duration phaseLeft = Duration.zero;
+  Timer? _pomoTicker;
+  bool _pomoAuto = false;
+  String notifyPerm = 'unknown';
+
+  /// Persistent in-app phase-end notice: the reliable signal, since a
+  /// system notification may never surface from this webview and a
+  /// lone beep is easy to miss. Set when a phase ends; cleared on
+  /// dismiss, on a new phase, or when Pomodoro is reset/turned off.
+  String? pomoNoticeTitle;
+  String? pomoNoticeBody;
+
+  void dismissPomoNotice() {
+    pomoNoticeTitle = null;
+    pomoNoticeBody = null;
+    notifyListeners();
+  }
+
+  Duration get focusTotal => Duration(minutes: focusMin);
+  Duration get breakTotal => Duration(minutes: breakMin);
+
+  // ── Planner to-dos (device-only for now) ─────────────────────────
+  List<TodoTask> tasks = [];
+
+  // ── Day-detail cache for Statistics / Planner ────────────────────
+  final Map<String, DayDetail> _dayCache = {};
+
+  Future<void> _loadLocal() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      ddayStr = sp.getString('dday');
+      goalMinutes = sp.getInt('goalMin') ?? 0;
+      pomoOn = sp.getBool('pomoOn') ?? false;
+      focusMin = sp.getInt('focusMin') ?? 25;
+      breakMin = sp.getInt('breakMin') ?? 5;
+      longBreakMin = sp.getInt('longBreakMin') ?? 15;
+      cyclesBeforeLong = sp.getInt('cyclesBeforeLong') ?? 4;
+      final tj = sp.getString('todoTasks');
+      if (tj != null && tj.isNotEmpty) {
+        final decoded = jsonDecode(tj);
+        if (decoded is List) {
+          tasks = decoded
+              .whereType<Map<String, dynamic>>()
+              .map(TodoTask.fromJson)
+              .where((t) => t.id.isNotEmpty)
+              .toList();
+        }
+      }
+      notifyPerm = notifyPermissionState();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _saveLocal() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      if (ddayStr == null) {
+        await sp.remove('dday');
+      } else {
+        await sp.setString('dday', ddayStr!);
+      }
+      await sp.setInt('goalMin', goalMinutes);
+      await sp.setBool('pomoOn', pomoOn);
+      await sp.setInt('focusMin', focusMin);
+      await sp.setInt('breakMin', breakMin);
+      await sp.setInt('longBreakMin', longBreakMin);
+      await sp.setInt('cyclesBeforeLong', cyclesBeforeLong);
+    } catch (_) {}
+  }
+
+  Future<void> _saveTasks() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(
+          'todoTasks', jsonEncode(tasks.map((t) => t.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  void setDday(DateTime? d) {
+    ddayStr = d == null ? null : dateStr(d);
+    _saveLocal();
+    notifyListeners();
+  }
+
+  void setGoalMinutes(int minutes) {
+    goalMinutes = minutes < 0 ? 0 : minutes;
+    _saveLocal();
+    notifyListeners();
+  }
+
+  static String dateStr(DateTime d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${d.year}-${two(d.month)}-${two(d.day)}';
+  }
+
+  // ── Pomodoro engine ──────────────────────────────────────────────
+  void setPomoOn(bool on) {
+    pomoOn = on;
+    // Gesture tap: unlock WebAudio now so the phase-end beep can
+    // actually sound later (a context first created at phase-end
+    // time, with no gesture in progress, may stay suspended).
+    if (on) unlockAudio();
+    _saveLocal();
+    if (!on) {
+      pomoCycles = 0;
+      _resetPomo();
+    } else if (studying && pomoPhase == 'idle') {
+      _beginPhase('focus');
+    }
+    notifyListeners();
+  }
+
+  void setPomoTimes(int focus, int brk) {
+    focusMin = focus.clamp(1, 600);
+    breakMin = brk.clamp(1, 120);
+    _saveLocal();
+    notifyListeners();
+  }
+
+  void setPomoExtras(int longMin, int cycles) {
+    longBreakMin = longMin.clamp(1, 120);
+    cyclesBeforeLong = cycles.clamp(2, 8);
+    _saveLocal();
+    notifyListeners();
+  }
+
+  void _beginPhase(String phase, {bool longBreak = false}) {
+    // A new phase supersedes any stale phase-end banner.
+    pomoNoticeTitle = null;
+    pomoNoticeBody = null;
+    pomoPhase = phase;
+    final mins =
+        phase == 'focus' ? focusMin : (longBreak ? longBreakMin : breakMin);
+    pomoBreakLong = phase == 'break' && longBreak;
+    _phaseEndsAt = DateTime.now().add(Duration(minutes: mins));
+    _syncPhaseLeft();
+    _pomoTicker?.cancel();
+    _pomoTicker =
+        Timer.periodic(const Duration(milliseconds: 500), (_) => _pomoTick());
+    notifyListeners();
+  }
+
+  void _syncPhaseLeft() {
+    final end = _phaseEndsAt;
+    if (end == null) {
+      phaseLeft = Duration.zero;
+      return;
+    }
+    final d = end.difference(DateTime.now());
+    phaseLeft = d.isNegative ? Duration.zero : d;
+  }
+
+  Future<void> _pomoTick() async {
+    _syncPhaseLeft();
+    notifyListeners();
+    if (phaseLeft > Duration.zero || _phaseEndsAt == null) return;
+    if (pomoPhase == 'focus') {
+      // Focus done: count the round, then run a short break — or a
+      // long one when a full set of focus rounds is complete. The
+      // real study timer is stopped either way.
+      pomoCycles++;
+      final isLong =
+          cyclesBeforeLong >= 2 && pomoCycles % cyclesBeforeLong == 0;
+      _pomoAuto = true;
+      _beginPhase('break', longBreak: isLong);
+      showAppNotification(
+          'Focus complete',
+          isLong
+              ? 'Pomodoro done — long break for $longBreakMin min. The study timer was stopped.'
+              : 'Pomodoro done — break for $breakMin min. The study timer was stopped.');
+      notifyListeners();
+      try {
+        await stopTimer();
+      } catch (_) {
+      } finally {
+        _pomoAuto = false;
+      }
+      _syncPhaseLeft();
+      // In-app banner: the reliable phase-end signal (the system
+      // notification above may never surface from this webview).
+      // Names the actual phase and duration — never a hardcoded text.
+      pomoNoticeTitle = 'Focus over';
+      pomoNoticeBody = isLong
+          ? 'Long break for $longBreakMin min — the study timer was stopped.'
+          : 'Break for $breakMin min — the study timer was stopped.';
+      notifyListeners();
+    } else if (pomoPhase == 'break') {
+      // Break end never auto-starts focus — that stays a deliberate
+      // choice. A finished long break also closes the set.
+      final wasLong = pomoBreakLong;
+      if (wasLong) pomoCycles = 0;
+      _resetPomo();
+      pomoNoticeTitle = wasLong ? 'Long break over' : 'Break over';
+      pomoNoticeBody = 'Tap a subject to start the next focus round.';
+      showAppNotification(pomoNoticeTitle!, pomoNoticeBody!);
+      notifyListeners();
+    }
+  }
+
+  void _resetPomo() {
+    _pomoTicker?.cancel();
+    _pomoTicker = null;
+    pomoPhase = 'idle';
+    pomoBreakLong = false;
+    _phaseEndsAt = null;
+    phaseLeft = Duration.zero;
+    pomoNoticeTitle = null;
+    pomoNoticeBody = null;
+  }
+
+  Future<void> enableNotifications() async {
+    unlockAudio();
+    notifyPerm = await requestNotifyPermission();
+    notifyListeners();
+  }
+
+  // ── To-dos ───────────────────────────────────────────────────────
+  /// One-line status for the Planner when a server write falls back
+  /// (e.g. created locally because the server didn't confirm). Null
+  /// means nothing to report; the Planner shows and dismisses it.
+  String? plannerNotice;
+
+  void dismissPlannerNotice() {
+    plannerNotice = null;
+    notifyListeners();
+  }
+
+  /// Optimistic done-state for server tasks, keyed by task id. The
+  /// server row's YptTask is immutable, so toggles live here until a
+  /// reload confirms (or corrects) them.
+  final Map<int, bool> _serverDoneOverrides = {};
+  final Set<int> _serverToggling = {};
+
+  /// Optimistic status-score overrides for server tasks, keyed by
+  /// task id — the three-state menu path. Values: 3 done,
+  /// [kTaskHalfDoneScore] half-done, null not done. Checked before
+  /// [_serverDoneOverrides] so a menu pick wins over a stale binary
+  /// toggle for the same task.
+  final Map<int, int?> _serverStatusOverrides = {};
+
+  /// Effective server score: menu override, then binary-toggle
+  /// override, then the task's own status (0 reads as not done).
+  int serverTaskScore(YptTask t) {
+    if (_serverStatusOverrides.containsKey(t.id)) {
+      return _serverStatusOverrides[t.id] ?? 0;
+    }
+    if (_serverDoneOverrides.containsKey(t.id)) {
+      return _serverDoneOverrides[t.id]! ? 3 : 0;
+    }
+    return t.status;
+  }
+
+  bool serverTaskDone(YptTask t) => serverTaskScore(t) == 3;
+
+  /// Toggle a server ('YPT') task's done state via PUT
+  /// /study/study-plan/rest. Optimistic: the checkbox flips at once
+  /// and flips back with a notice if the server doesn't confirm.
+  Future<void> toggleServerTask(YptTask task) async {
+    if (_serverToggling.contains(task.id)) return;
+    final target = !serverTaskDone(task);
+    _serverDoneOverrides[task.id] = target;
+    plannerNotice = null;
+    notifyListeners();
+    _serverToggling.add(task.id);
+    bool ok = false;
+    try {
+      ok = await api.toggleStudyPlanTask(task: task, done: target);
+    } catch (_) {
+      ok = false;
+    }
+    _serverToggling.remove(task.id);
+    if (!ok) {
+      _serverDoneOverrides.remove(task.id);
+      plannerNotice =
+          'Couldn\'t update that task — it flipped back. Check connection and try again.';
+      showAppNotification('Task not updated',
+          'The server didn\'t confirm the change.');
+    }
+    notifyListeners();
+  }
+
+  /// Set a server ('YPT') task's status via PUT
+  /// /study/study-plan/rest (three-state menu path). Same
+  /// optimistic + rollback + notice pattern as the toggle, and the
+  /// same in-flight guard set, so a menu pick and a toggle can't
+  /// race on one task. The binary toggle above is left untouched.
+  Future<void> setServerTaskStatus(YptTask task, int? score) async {
+    if (_serverToggling.contains(task.id)) return;
+    _serverStatusOverrides[task.id] = score;
+    plannerNotice = null;
+    notifyListeners();
+    _serverToggling.add(task.id);
+    bool ok = false;
+    try {
+      ok = await api.setStudyPlanTaskScore(task: task, score: score);
+    } catch (_) {
+      ok = false;
+    }
+    _serverToggling.remove(task.id);
+    if (!ok) {
+      _serverStatusOverrides.remove(task.id);
+      plannerNotice =
+          'Couldn\'t update that task — it flipped back. Check connection and try again.';
+      showAppNotification('Task not updated',
+          'The server didn\'t confirm the change.');
+    }
+    notifyListeners();
+  }
+
+  /// Add a task, preferring the server so it also appears in the
+  /// official app. On success the profile reloads and the task shows
+  /// with its YPT tag; if the server doesn't confirm, or the reload
+  /// can't see the new task, it falls back to a local task plus a
+  /// visible note — the task is never silently lost.
+  Future<void> addTaskWithServer(
+      String date, String subjectTitle, String text) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    plannerNotice = null;
+    int? subjectId;
+    for (final s in user?.subjects ?? const <Subject>[]) {
+      if (s.title == subjectTitle) {
+        subjectId = s.id;
+        break;
+      }
+    }
+    bool serverOk = false;
+    if (api.jwt != null) {
+      try {
+        serverOk = await api.createStudyPlanTask(
+            title: trimmed, subjectId: subjectId, dateYmd: date);
+      } catch (_) {
+        serverOk = false;
+      }
+    }
+    if (serverOk) {
+      try {
+        await reloadProfile();
+      } catch (_) {}
+      final found = (user?.tasks ?? const <YptTask>[])
+          .any((t) => t.date == date && t.title == trimmed);
+      if (found) {
+        notifyListeners();
+        return;
+      }
+      addTask(date, subjectTitle, trimmed);
+      plannerNotice =
+          'Created on the server, but this site\'s list couldn\'t confirm it yet — check the official app. It\'s also saved here so it isn\'t lost.';
+      notifyListeners();
+      return;
+    }
+    addTask(date, subjectTitle, trimmed);
+    plannerNotice =
+        'Couldn\'t reach the server — saved on this device only. It won\'t show in the official app yet.';
+    notifyListeners();
+  }
+
+  List<TodoTask> tasksFor(String date) {
+    final list = tasks.where((t) => t.date == date).toList();
+    list.sort((a, b) {
+      if (a.done != b.done) return a.done ? 1 : -1;
+      final s = a.subject.compareTo(b.subject);
+      return s != 0 ? s : a.text.compareTo(b.text);
+    });
+    return list;
+  }
+
+  void addTask(String date, String subject, String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    tasks.add(TodoTask(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      date: date,
+      subject: subject,
+      text: trimmed,
+    ));
+    _saveTasks();
+    notifyListeners();
+  }
+
+  void toggleTask(String id) {
+    for (final t in tasks) {
+      if (t.id == id) {
+        t.done = !t.done;
+        break;
+      }
+    }
+    _saveTasks();
+    notifyListeners();
+  }
+
+  void deleteTask(String id) {
+    tasks.removeWhere((t) => t.id == id);
+    _saveTasks();
+    notifyListeners();
+  }
+
+  // ── Day details ──────────────────────────────────────────────────
+  Future<DayDetail> fetchDay(String date, {bool force = false}) async {
+    if (!force) {
+      final hit = _dayCache[date];
+      if (hit != null) return hit;
+    }
+    final raw = await api.dayLogRaw(date);
+    final byId = <int, String>{
+      for (final s in user?.subjects ?? const <Subject>[])
+        if (s.id > 0) s.id: s.title,
+    };
+    final detail = DayDetail.fromRaw(date, raw,
+        subjectTitleById: byId,
+        archivedTitles: user?.archivedTitles ?? const {});
+    _dayCache[date] = detail;
+    return detail;
+  }
+
+  Future<List<GroupMember>> fetchMembersOnDate(int groupId, String date) async {
+    final raw = await api.groupMembersRawOnDate(groupId, user!.countryId, date);
+    return raw.map(GroupMember.fromJson).toList();
+  }
+
+  /// Group ranks route: type=day for one date, type=week anchored on
+  /// the week's Monday for week aggregates.
+  Future<List<GroupMember>> fetchGroupRanks(
+          int groupId, String date, String type) =>
+      api.groupRanks(groupId, user!.countryId, date, type);
 
   bool get loggedIn => user != null && api.jwt != null;
   bool get studying => activeSubject != null;
@@ -230,6 +687,7 @@ class AppState extends ChangeNotifier {
     ranks = [];
     groups = [];
     joinedGroups = [];
+    _dayCache.clear();
     errorText = null;
     timerErrorText = null;
     statsErrorText = null;
@@ -238,6 +696,9 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> startTimer(Subject s) async {
+    // Subject tap is a gesture: unlock WebAudio now so the
+    // phase-end beep can sound later.
+    unlockAudio();
     if (timerLoading) return;
     if (studying) await stopTimer();
     if (studying) return;
@@ -250,6 +711,7 @@ class AppState extends ChangeNotifier {
       activeSubject = s;
       _startedAtMs = startedAtMs;
       _startTicker();
+      if (pomoOn) _beginPhase('focus');
     } catch (e) {
       timerErrorText = 'Could not start timer: ${_readableError(e)}';
     }
@@ -266,6 +728,7 @@ class AppState extends ChangeNotifier {
       return;
     }
     _clearTimer();
+    if (!_pomoAuto) _resetPomo();
     if (silent) {
       notifyListeners();
       return;
@@ -275,6 +738,11 @@ class AppState extends ChangeNotifier {
     notifyListeners(); // 멈추는 즉시 UI 갱신 (네트워크 기다리지 않음)
     try {
       await api.studyStop(started);
+      // The just-ended session changes today's logs: drop the cached
+      // day detail so the next fetch (e.g. the break counter's "last
+      // end") reads the fresh logs instead of a stale, pre-session
+      // snapshot.
+      _dayCache.remove(todayStr());
       user = await api.reloadInfo(); // 오늘 총시간 갱신
       await _refreshSubjectTimesQuietly(); // 과목별 시간 갱신
     } catch (e) {

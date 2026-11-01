@@ -1,8 +1,7 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
-import '../social_auth.dart';
 import '../main.dart' show kBrand;
 
 class LoginScreen extends StatefulWidget {
@@ -59,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Center(
-                  child: Text('YPT',
+                  child: Text('wannabeYPT',
                       style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
@@ -67,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 2),
                 Center(
-                    child: Text('Yeolpumta Desktop',
+                    child: Text('Yeolpumta, in your browser',
                         style: TextStyle(color: Colors.grey[500]))),
                 const SizedBox(height: 36),
                 TextField(
@@ -126,32 +125,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   Expanded(child: Divider(color: Colors.grey[800])),
                 ]),
                 const SizedBox(height: 16),
-                // 소셜 로그인 (실제 앱과 동일한 공급자/엔드포인트)
+                // Social sign-in on web: Google only. (Kakao/Naver
+                // buttons were inherited from the upstream desktop
+                // client and were dead weight here.)
                 _SocialButton(
-                  label: 'Continue with Kakao',
-                  bg: const Color(0xFFFEE500),
-                  fg: const Color(0xFF191600),
-                  icon: Icons.chat_bubble,
-                  enabled: !kIsWeb && !st.loading,
-                  onTap: () => st.socialLogin(SocialProvider.kakao),
-                ),
-                const SizedBox(height: 10),
-                _SocialButton(
-                  label: 'Continue with Naver',
-                  bg: const Color(0xFF03C75A),
-                  fg: Colors.white,
-                  icon: Icons.navigation,
-                  enabled: !kIsWeb && !st.loading,
-                  onTap: () => st.socialLogin(SocialProvider.naver),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: Text(
-                      kIsWeb
-                          ? 'Social login (Kakao/Naver) is available in the desktop app only'
-                          : 'Email or Kakao/Naver — your real YPT account',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  label: 'Continue with Google',
+                  bg: Colors.white,
+                  fg: const Color(0xFF1F1F1F),
+                  icon: Icons.g_mobiledata,
+                  enabled: !st.loading,
+                  onTap: _openGoogleLogin,
                 ),
               ],
             ),
@@ -164,6 +147,11 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submit(AppState st) {
     if (_email.text.isEmpty || _pw.text.isEmpty) return;
     st.login(_email.text.trim(), _pw.text);
+  }
+
+  Future<void> _openGoogleLogin() async {
+    final url = Uri.parse('${Uri.base.origin}/google-login.html');
+    await launchUrl(url, webOnlyWindowName: '_self');
   }
 }
 
