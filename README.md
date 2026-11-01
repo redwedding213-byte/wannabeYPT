@@ -34,15 +34,16 @@ launch are his.
 - Per-subject study timer with D-Day chip and device-local daily goal
 - Rebuilt Statistics: month heatmap, day detail, week/month/trend views
 - Planner tab: week strip, day timetable from sessions, per-day to-dos
-  (server tasks are read-only; web-added ones live on-device)
+  (task toggle and create work on the server)
 - Group room: Home / Attendance / Rankings / Invite (QR + invite link)
+- Group chat: message list, send, reactions, stickers, image-URL paste
 - Member profiles as a right-side panel; self-profile with focus heatmap
 - Pomodoro panel with focus/break steppers and phase-end notifications
 - Classic YPT look, kept deliberately familiar
 
-Deliberately not built: Books/flashcards, group chat, Challenge, Music,
-Timelapse. All server writes except timer start/stop are closed — the app
-is read + timer start/stop only.
+Deliberately not built: Books/flashcards, Challenge, Music, Timelapse.
+Beyond reading, the app writes timer start/stop, task toggles/creation,
+and group chat messages to the server.
 
 ## Build & Deploy
 
