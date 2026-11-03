@@ -112,15 +112,18 @@ class AppState extends ChangeNotifier {
 
   // ── Pomodoro ─────────────────────────────────────────────────────
   bool pomoOn = false;
-  int focusMin = 25;
-  int breakMin = 5;
+  int focusMin = 50;
+  int breakMin = 10;
   int longBreakMin = 15;
   int cyclesBeforeLong = 4;
   int pomoCycles = 0; // completed focus rounds in the current run
   bool pomoBreakLong = false; // the running break is a long one
-  String pomoPhase = 'idle'; // idle | focus | break
+  String pomoPhase = 'idle'; // idle | focus | break | overtime
+  bool pomoOvertime = false; // true once the focus clock hits zero
   DateTime? _phaseEndsAt;
-  Duration phaseLeft = Duration.zero;
+  Duration phaseLeft = Duration.zero; // counts down during focus/break
+  Duration overtimeElapsed = Duration.zero; // counts up after focus end
+  DateTime? _overtimeStartedAt;
   Timer? _pomoTicker;
   bool _pomoAuto = false;
   String notifyPerm = 'unknown';
@@ -153,8 +156,8 @@ class AppState extends ChangeNotifier {
       ddayStr = sp.getString('dday');
       goalMinutes = sp.getInt('goalMin') ?? 0;
       pomoOn = sp.getBool('pomoOn') ?? false;
-      focusMin = sp.getInt('focusMin') ?? 25;
-      breakMin = sp.getInt('breakMin') ?? 5;
+      focusMin = sp.getInt('focusMin') ?? 50;
+      breakMin = sp.getInt('breakMin') ?? 10;
       longBreakMin = sp.getInt('longBreakMin') ?? 15;
       cyclesBeforeLong = sp.getInt('cyclesBeforeLong') ?? 4;
       final tj = sp.getString('todoTasks');
@@ -251,6 +254,9 @@ class AppState extends ChangeNotifier {
     pomoNoticeTitle = null;
     pomoNoticeBody = null;
     pomoPhase = phase;
+    pomoOvertime = false;
+    overtimeElapsed = Duration.zero;
+    _overtimeStartedAt = null;
     final mins =
         phase == 'focus' ? focusMin : (longBreak ? longBreakMin : breakMin);
     pomoBreakLong = phase == 'break' && longBreak;
@@ -272,39 +278,38 @@ class AppState extends ChangeNotifier {
     phaseLeft = d.isNegative ? Duration.zero : d;
   }
 
+  void _syncOvertime() {
+    final started = _overtimeStartedAt;
+    if (started == null) {
+      overtimeElapsed = Duration.zero;
+      return;
+    }
+    overtimeElapsed = DateTime.now().difference(started);
+  }
+
   Future<void> _pomoTick() async {
+    if (pomoOvertime) {
+      // Overtime: count up; study timer keeps running.
+      _syncOvertime();
+      notifyListeners();
+      return;
+    }
     _syncPhaseLeft();
     notifyListeners();
     if (phaseLeft > Duration.zero || _phaseEndsAt == null) return;
     if (pomoPhase == 'focus') {
-      // Focus done: count the round, then run a short break — or a
-      // long one when a full set of focus rounds is complete. The
-      // real study timer is stopped either way.
+      // Focus done: notify and enter overtime. Study timer keeps running.
+      // The round is only counted once (pomoOvertime guards re-entry).
       pomoCycles++;
-      final isLong =
-          cyclesBeforeLong >= 2 && pomoCycles % cyclesBeforeLong == 0;
-      _pomoAuto = true;
-      _beginPhase('break', longBreak: isLong);
-      showAppNotification(
-          'Focus complete',
-          isLong
-              ? 'Pomodoro done — long break for $longBreakMin min. The study timer was stopped.'
-              : 'Pomodoro done — break for $breakMin min. The study timer was stopped.');
-      notifyListeners();
-      try {
-        await stopTimer();
-      } catch (_) {
-      } finally {
-        _pomoAuto = false;
-      }
-      _syncPhaseLeft();
-      // In-app banner: the reliable phase-end signal (the system
-      // notification above may never surface from this webview).
-      // Names the actual phase and duration — never a hardcoded text.
+      pomoOvertime = true;
+      _overtimeStartedAt = DateTime.now();
+      // phaseLeft stays zero; we no longer need _phaseEndsAt.
+      _phaseEndsAt = null;
+      // In-app persistent banner.
       pomoNoticeTitle = 'Focus over';
-      pomoNoticeBody = isLong
-          ? 'Long break for $longBreakMin min — the study timer was stopped.'
-          : 'Break for $breakMin min — the study timer was stopped.';
+      pomoNoticeBody = 'The study timer keeps running \u2014 pause when you want a break.';
+      // System notification / beep.
+      showAppNotification('Focus complete', pomoNoticeBody!);
       notifyListeners();
     } else if (pomoPhase == 'break') {
       // Break end never auto-starts focus — that stays a deliberate
@@ -323,9 +328,12 @@ class AppState extends ChangeNotifier {
     _pomoTicker?.cancel();
     _pomoTicker = null;
     pomoPhase = 'idle';
+    pomoOvertime = false;
     pomoBreakLong = false;
     _phaseEndsAt = null;
     phaseLeft = Duration.zero;
+    overtimeElapsed = Duration.zero;
+    _overtimeStartedAt = null;
     pomoNoticeTitle = null;
     pomoNoticeBody = null;
   }

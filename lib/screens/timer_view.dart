@@ -1058,6 +1058,36 @@ class _PomoPanel extends StatelessWidget {
 
   Widget _phaseArea(AppState st) {
     if (st.pomoPhase == 'focus') {
+      if (st.pomoOvertime) {
+        // Overtime: the focus clock hit zero — count up, study timer
+        // keeps running. Circle progress stays at 100 % (value=1).
+        return Column(
+          children: [
+            const Text('OVERTIME',
+                style: TextStyle(
+                    color: Colors.orangeAccent,
+                    fontSize: 11,
+                    letterSpacing: 3,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
+            Text('+${fmt(st.overtimeElapsed)}',
+                style: const TextStyle(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w300,
+                    fontFeatures: [FontFeature.tabularFigures()])),
+            const SizedBox(height: 5),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: const LinearProgressIndicator(
+                value: 1.0,
+                minHeight: 5,
+                backgroundColor: Colors.white10,
+                valueColor: AlwaysStoppedAnimation(Colors.orangeAccent),
+              ),
+            ),
+          ],
+        );
+      }
       final total = st.focusTotal.inMilliseconds;
       final left = st.phaseLeft.inMilliseconds;
       return Column(
