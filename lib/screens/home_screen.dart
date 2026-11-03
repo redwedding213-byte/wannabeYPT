@@ -11,6 +11,7 @@ import 'planner_view.dart';
 import 'stats_view.dart';
 import 'groups_view.dart';
 import 'group_room_screen.dart';
+import 'allowed_sites_dialog.dart';
 
 /// Lets inner views (the Timer tab strip, the grid menu) switch the
 /// shell's main tab, like the official app's home tabs do.
@@ -191,6 +192,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     bottom: 14,
                     child: Center(child: _navPill(context)),
                   ),
+                  Positioned(
+                    right: 20,
+                    bottom: 20,
+                    child: _allowedSitesPill(context),
+                  ),
                 ],
               ),
             ),
@@ -284,6 +290,43 @@ class _HomeScreenState extends State<HomeScreen> {
         minimumSize: const Size(0, 28),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       );
+
+  Widget _allowedSitesPill(BuildContext context) {
+    return InkWell(
+      onTap: () => AllowedSitesDialog.show(context),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: kCard.withValues(alpha: 0.90),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.shield_outlined, size: 14, color: Colors.grey[400]),
+            const SizedBox(width: 6),
+            Text(
+              'Allowed Sites',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[300],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _navPill(BuildContext context) {
     final items = <(IconData, IconData, String)>[
