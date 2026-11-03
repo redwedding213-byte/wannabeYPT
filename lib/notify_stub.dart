@@ -21,3 +21,7 @@ Future<String> requestNotifyPermission() async => 'unsupported';
 String notifyPermissionState() => 'unsupported';
 
 void showAppNotification(String title, String body) {}
+
+void setWebPageTitle(String title) {}
+
+void setWebCloseGuard(bool enabled) {}

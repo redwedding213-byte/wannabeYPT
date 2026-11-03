@@ -102,6 +102,22 @@
       }
       return Notification.requestPermission();
     };
+
+    // Live Tab Title + Accidental Close Guard
+    window._yptStudying = false;
+    window.addEventListener('beforeunload', function (e) {
+      if (window._yptStudying) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    });
+    window.yptSetCloseGuard = function (enabled) {
+      window._yptStudying = !!enabled;
+    };
+    window.yptSetTitle = function (title) {
+      document.title = title || 'wannabeYPT';
+    };
   </script>
   <script src="flutter_bootstrap.js" async></script>
   <script defer src="/_vercel/insights/script.js"></script>

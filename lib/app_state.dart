@@ -12,6 +12,7 @@ class AppState extends ChangeNotifier {
 
   AppState() {
     _loadLocal();
+    _syncWebState();
   }
   UserData? user;
   bool loading = false;
@@ -838,8 +839,56 @@ class AppState extends ChangeNotifier {
     return text;
   }
 
+  String _lastWebTitle = '';
+  bool _lastCloseGuard = false;
+
+  void _syncWebState() {
+    final guard = studying;
+    if (guard != _lastCloseGuard) {
+      _lastCloseGuard = guard;
+      setWebCloseGuard(guard);
+    }
+
+    final String title;
+    if (studying && activeSubject != null) {
+      final sub = activeSubject!.title;
+      if (pomoOn && pomoPhase == 'focus') {
+        if (pomoOvertime) {
+          title = '+${_fmtTabDuration(overtimeElapsed)} OVERTIME · $sub · wannabeYPT';
+        } else {
+          title = '${_fmtTabDuration(phaseLeft)} Focus · $sub · wannabeYPT';
+        }
+      } else {
+        title = '▶ ${_fmtTabDuration(elapsed)} $sub · wannabeYPT';
+      }
+    } else if (pomoPhase == 'break') {
+      final breakType = pomoBreakLong ? 'Long Break' : 'Break';
+      title = '${_fmtTabDuration(phaseLeft)} $breakType · wannabeYPT';
+    } else {
+      title = 'wannabeYPT';
+    }
+
+    if (title != _lastWebTitle) {
+      _lastWebTitle = title;
+      setWebPageTitle(title);
+    }
+  }
+
+  static String _fmtTabDuration(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${d.inHours}:${two(d.inMinutes % 60)}:${two(d.inSeconds % 60)}';
+  }
+
+  @override
+  void notifyListeners() {
+    super.notifyListeners();
+    _syncWebState();
+  }
+
   @override
   void dispose() {
+    setWebCloseGuard(false);
+    setWebPageTitle('wannabeYPT');
     _ticker?.cancel();
     api.close();
     super.dispose();

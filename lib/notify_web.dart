@@ -65,3 +65,17 @@ Future<String> requestNotifyPermission() async {
   } catch (_) {}
   return notifyPermissionState();
 }
+
+/// Updates document.title on web.
+void setWebPageTitle(String title) {
+  try {
+    _fn('yptSetTitle')?.callAsFunction(null, title.toJS);
+  } catch (_) {}
+}
+
+/// Sets whether the beforeunload close guard should prompt on exit.
+void setWebCloseGuard(bool enabled) {
+  try {
+    _fn('yptSetCloseGuard')?.callAsFunction(null, enabled.toJS);
+  } catch (_) {}
+}
