@@ -1,4 +1,5 @@
 # Miscellaneous
+.vercel/
 *.class
 *.log
 *.pyc
