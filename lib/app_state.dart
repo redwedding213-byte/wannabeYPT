@@ -21,6 +21,8 @@ class AppState extends ChangeNotifier {
   // 타이머 상태
   Subject? activeSubject;
   int? _startedAtMs;
+  DateTime? get timerStartedAt =>
+      _startedAtMs == null ? null : DateTime.fromMillisecondsSinceEpoch(_startedAtMs!);
   Timer? _ticker;
   Duration elapsed = Duration.zero;
   bool timerLoading = false;
@@ -762,6 +764,31 @@ class AppState extends ChangeNotifier {
     }
     timerLoading = false;
     notifyListeners();
+  }
+
+  /// Manually log a completed study session via POST /study/add.
+  /// On success, clears day caches, refreshes user totals + subject times,
+  /// and notifies listeners.
+  Future<bool> logManualStudy({
+    required String subjectTitle,
+    required DateTime startAt,
+    required DateTime stopAt,
+  }) async {
+    final ok = await api.logManualStudy(
+      subjectTitle: subjectTitle,
+      startAt: startAt,
+      stopAt: stopAt,
+    );
+    if (ok) {
+      _dayCache.remove(dateStr(startAt));
+      _dayCache.remove(todayStr());
+      try {
+        user = await api.reloadInfo();
+        await _refreshSubjectTimesQuietly();
+      } catch (_) {}
+      notifyListeners();
+    }
+    return ok;
   }
 
   void _startTicker() {

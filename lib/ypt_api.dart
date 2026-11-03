@@ -410,7 +410,8 @@ class YptApi {
     if (studyMs <= 0) {
       throw const YptApiException('End time must be after start time.');
     }
-    final date = '${startAt.year}-${startAt.month}-${startAt.day}';
+    String two(int n) => n.toString().padLeft(2, '0');
+    final date = '${startAt.year}-${two(startAt.month)}-${two(startAt.day)}';
     final r = await _post('/study/add', {
       'sb': subjectTitle,
       'date': date,

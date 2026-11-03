@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../ypt_api.dart' show YptApiException;
 import '../main.dart' show kBrand, kCard, kCard2;
+import 'manual_log_dialog.dart';
 import 'timer_view.dart' show fmtMs;
 
 /// Statistics in the shape of the official app:
@@ -450,8 +450,8 @@ class _StatsViewState extends State<StatsView> {
     final st = context.read<AppState>();
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => _ManualLogDialog(
-        day: _selected,
+      builder: (_) => ManualLogDialog(
+        initialDay: _selected,
         subjects: st.user?.subjects ?? const <Subject>[],
       ),
     );
@@ -1092,182 +1092,6 @@ class _StatsViewState extends State<StatsView> {
                   fontFeatures: [FontFeature.tabularFigures()])),
         ],
       ),
-    );
-  }
-
-}
-
-/// Manual study record dialog: subject + start/end times, all
-/// user-entered, nothing pre-filled. Only time actually studied goes
-/// in — this writes real time to the YPT record.
-class _ManualLogDialog extends StatefulWidget {
-  final DateTime day;
-  final List<Subject> subjects;
-  const _ManualLogDialog({required this.day, required this.subjects});
-  @override
-  State<_ManualLogDialog> createState() => _ManualLogDialogState();
-}
-
-class _ManualLogDialogState extends State<_ManualLogDialog> {
-  Subject? _subject;
-  TimeOfDay? _start;
-  TimeOfDay? _end;
-  bool _saving = false;
-  String? _error;
-
-  DateTime _at(TimeOfDay t) => DateTime(
-      widget.day.year, widget.day.month, widget.day.day, t.hour, t.minute);
-
-  bool get _valid {
-    if (_subject == null || _start == null || _end == null) return false;
-    return _at(_end!).isAfter(_at(_start!));
-  }
-
-  int? get _ms {
-    if (_start == null || _end == null) return null;
-    final d = _at(_end!).difference(_at(_start!)).inMilliseconds;
-    return d > 0 ? d : null;
-  }
-
-  Future<void> _pick(bool isStart) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime:
-          (isStart ? _start : _end) ?? const TimeOfDay(hour: 9, minute: 0),
-    );
-    if (picked == null) return;
-    setState(() {
-      if (isStart) {
-        _start = picked;
-      } else {
-        _end = picked;
-      }
-      _error = null;
-    });
-  }
-
-  Future<void> _save() async {
-    if (!_valid || _saving) return;
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      final st = context.read<AppState>();
-      await st.api.logManualStudy(
-        subjectTitle: _subject!.title,
-        startAt: _at(_start!),
-        stopAt: _at(_end!),
-      );
-      if (!mounted) return;
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = e is YptApiException
-            ? e.message
-            : 'Could not save — check connection and try again.';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final dateLabel = DateFormat('EEE, MMM d, yyyy').format(widget.day);
-    return AlertDialog(
-      backgroundColor: kCard,
-      title: const Text('Log study time', style: TextStyle(fontSize: 16)),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(dateLabel,
-                style: TextStyle(color: Colors.grey[400], fontSize: 12.5)),
-            const SizedBox(height: 14),
-            DropdownButtonFormField<Subject>(
-              initialValue: _subject,
-              hint: const Text('Choose a subject'),
-              items: [
-                for (final s in widget.subjects)
-                  DropdownMenuItem(
-                    value: s,
-                    child: Row(
-                      children: [
-                        Container(
-                            width: 9,
-                            height: 9,
-                            decoration: BoxDecoration(
-                                color: s.color, shape: BoxShape.circle)),
-                        const SizedBox(width: 9),
-                        Text(s.title),
-                      ],
-                    ),
-                  ),
-              ],
-              onChanged: (v) => setState(() => _subject = v),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _pick(true),
-                    child: Text(_start == null
-                        ? 'Start time'
-                        : _start!.format(context)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _pick(false),
-                    child: Text(
-                        _end == null ? 'End time' : _end!.format(context)),
-                  ),
-                ),
-              ],
-            ),
-            if (_ms != null) ...[
-              const SizedBox(height: 10),
-              Text('Duration: ${fmtMs(_ms!)}',
-                  style: const TextStyle(fontSize: 12.5)),
-            ],
-            if (_start != null && _end != null && !_valid) ...[
-              const SizedBox(height: 10),
-              const Text('End time must be after start time.',
-                  style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-            ],
-            const SizedBox(height: 14),
-            const Text(
-              'Enter only time you actually studied. This adds real time to your YPT record.',
-              style: TextStyle(fontSize: 11.5, color: Colors.grey),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 10),
-              Text(_error!,
-                  style:
-                      const TextStyle(color: Colors.redAccent, fontSize: 12)),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _valid && !_saving ? _save : null,
-          child: _saving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Save'),
-        ),
-      ],
     );
   }
 }

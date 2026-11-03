@@ -7,6 +7,7 @@ import '../main.dart' show kBrand, kCard, kCard2;
 import '../models.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
+import 'manual_log_dialog.dart';
 import 'notifications_view.dart';
 import 'subjects_view.dart';
 import 'timetable_view.dart';
@@ -345,34 +346,62 @@ class _TimerViewState extends State<TimerView> {
                             color: Color(0x0DFFFFFF)),
                     ],
                     const SizedBox(height: 18),
-                    // Edit subject pill — flows under the rows, like
-                    // the official app.
+                    // Action pills under subjects list: Edit subject & Add time
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: InkWell(
-                          onTap: () => _subjectNote(context),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                                color: kCard2,
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.edit_outlined,
-                                    size: 13, color: Colors.grey[400]),
-                                const SizedBox(width: 6),
-                                Text('Edit subject',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[300])),
-                              ],
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            InkWell(
+                              onTap: () => _subjectNote(context),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                    color: kCard2,
+                                    borderRadius: BorderRadius.circular(8)),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.edit_outlined,
+                                        size: 13, color: Colors.grey[400]),
+                                    const SizedBox(width: 6),
+                                    Text('Edit subject',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[300])),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                            InkWell(
+                              onTap: _showManualLog,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                    color: kCard2,
+                                    borderRadius: BorderRadius.circular(8)),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.add,
+                                        size: 14, color: Colors.grey[400]),
+                                    const SizedBox(width: 6),
+                                    Text('Add time',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[300])),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -750,6 +779,35 @@ class _TimerViewState extends State<TimerView> {
   void _subjectNote(BuildContext context) {
     Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const SubjectsPage()));
+  }
+
+  Future<void> _showManualLog() async {
+    final st = context.read<AppState>();
+    final subjects = st.user?.subjects ?? const <Subject>[];
+    if (subjects.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No subjects available to log time to.')),
+      );
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => ManualLogDialog(
+        initialDay: DateTime.now(),
+        subjects: subjects,
+        initialSubject: st.activeSubject,
+      ),
+    );
+    if (ok == true && mounted) {
+      await _loadToday(force: true);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Study time logged successfully.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _editDday(BuildContext context) async {
