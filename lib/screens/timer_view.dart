@@ -545,35 +545,54 @@ class _TimerViewState extends State<TimerView> {
     final now = DateTime.now();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          InkWell(
-            onTap: () => _editDday(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                  color: kCard2, borderRadius: BorderRadius.circular(8)),
-              child: Text(_ddayLabel(st),
-                  style: const TextStyle(
-                      fontSize: 12.5, fontWeight: FontWeight.w700)),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: InkWell(
+              onTap: () => _editDday(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    color: kCard2, borderRadius: BorderRadius.circular(8)),
+                child: Text(_ddayLabel(st),
+                    style: const TextStyle(
+                        fontSize: 12.5, fontWeight: FontWeight.w700)),
+              ),
             ),
           ),
-          const Spacer(),
-          Text(DateFormat('EEE, M/d').format(now),
-              style: TextStyle(color: Colors.grey[200], fontSize: 13)),
-          const Spacer(),
-          IconButton(
-            tooltip: _compact ? 'Comfortable rows' : 'Compact rows',
-            icon: const Icon(Icons.view_sidebar_outlined, size: 20),
-            color: Colors.grey[300],
-            onPressed: () => setState(() => _compact = !_compact),
+          Center(
+            child: Text(
+              DateFormat('EEE, M/d').format(now),
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-          IconButton(
-            tooltip: 'Features',
-            icon: const Icon(Icons.grid_view, size: 21),
-            color: Colors.grey[300],
-            onPressed: () => _showGridMenu(context),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: _compact ? 'Comfortable rows' : 'Compact rows',
+                  icon: const Icon(Icons.view_sidebar_outlined, size: 20),
+                  color: Colors.grey[300],
+                  onPressed: () => setState(() => _compact = !_compact),
+                ),
+                IconButton(
+                  tooltip: 'Features',
+                  icon: const Icon(Icons.grid_view, size: 21),
+                  color: Colors.grey[300],
+                  onPressed: () => _showGridMenu(context),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -594,7 +613,7 @@ class _TimerViewState extends State<TimerView> {
     return 'D+${-diff}';
   }
 
-  // ── Tab strip: Timer · Statistics · Planner ──────────────────────
+  // ── Tab strip: Timer · Books · Statistics ────────────────────────
   Widget _tabStrip(BuildContext context) {
     Widget item(String label, bool activeTab, VoidCallback? onTap) {
       return Expanded(
@@ -626,7 +645,7 @@ class _TimerViewState extends State<TimerView> {
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.only(bottom: 7),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0x14FFFFFF))),
@@ -634,8 +653,12 @@ class _TimerViewState extends State<TimerView> {
       child: Row(
         children: [
           item('Timer', true, null),
+          item('Books', false, () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SubjectsPage()),
+            );
+          }),
           item('Statistics', false, () => TabBus.index.value = 2),
-          item('Planner', false, () => TabBus.index.value = 1),
         ],
       ),
     );
@@ -653,13 +676,13 @@ class _TimerViewState extends State<TimerView> {
           return Align(
             alignment: Alignment.topRight,
             child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-              constraints: const BoxConstraints(maxWidth: 360),
+              margin: const EdgeInsets.fromLTRB(16, 44, 16, 16),
+              constraints: const BoxConstraints(maxWidth: 370),
               decoration: BoxDecoration(
-                color: const Color(0xF21C1C24), // Sleek liquid frosted dark glass
-                borderRadius: BorderRadius.circular(22),
+                color: const Color(0xF21C1C24),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.16),
+                  color: Colors.white.withValues(alpha: 0.14),
                   width: 1,
                 ),
                 boxShadow: [
@@ -674,11 +697,11 @@ class _TimerViewState extends State<TimerView> {
                 type: MaterialType.transparency,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 16),
+                      horizontal: 18, vertical: 18),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Left column: Main features
+                      // Left column: Main features + Goals
                       Expanded(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -719,12 +742,32 @@ class _TimerViewState extends State<TimerView> {
                                 _showManualLog();
                               },
                             ),
+                            const SizedBox(height: 18),
+                            _gridCategoryTitle('Goals & Target'),
+                            _gridItem(
+                              Icons.flag_outlined,
+                              'D-Day · ${_ddayLabel(st)}',
+                              () {
+                                Navigator.pop(dlgCtx);
+                                _editDday(context);
+                              },
+                            ),
+                            _gridItem(
+                              Icons.track_changes_outlined,
+                              st.goalMinutes > 0
+                                  ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
+                                  : 'Daily goal',
+                              () {
+                                Navigator.pop(dlgCtx);
+                                _editGoal(context);
+                              },
+                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: 16),
 
-                      // Right column: Extra features
+                      // Right column: Extra features + More
                       Expanded(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -732,10 +775,14 @@ class _TimerViewState extends State<TimerView> {
                           children: [
                             _gridCategoryTitle('Extra features'),
                             _gridItem(
-                              Icons.event_note_outlined, 'Planner',
+                              Icons.menu_book_outlined, 'Books',
                               () {
                                 Navigator.pop(dlgCtx);
-                                TabBus.index.value = 1;
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const SubjectsPage(),
+                                  ),
+                                );
                               },
                             ),
                             _gridItem(
@@ -769,24 +816,8 @@ class _TimerViewState extends State<TimerView> {
                                 TabBus.index.value = 3;
                               },
                             ),
-                            _gridItem(
-                              Icons.flag_outlined,
-                              'D-Day · ${_ddayLabel(st)}',
-                              () {
-                                Navigator.pop(dlgCtx);
-                                _editDday(context);
-                              },
-                            ),
-                            _gridItem(
-                              Icons.track_changes_outlined,
-                              st.goalMinutes > 0
-                                  ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
-                                  : 'Daily goal',
-                              () {
-                                Navigator.pop(dlgCtx);
-                                _editGoal(context);
-                              },
-                            ),
+                            const SizedBox(height: 18),
+                            _gridCategoryTitle('More'),
                             _gridItem(
                               Icons.help_outline, 'Help',
                               () {

@@ -628,7 +628,7 @@ void showYptFeaturesMenu(BuildContext context) {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Left column: Main features
+                    // Left column: Main features + Goals
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -672,12 +672,32 @@ void showYptFeaturesMenu(BuildContext context) {
                               _yptManualLog(context);
                             },
                           ),
+                          const SizedBox(height: 18),
+                          _yptCategoryTitle('Goals & Target'),
+                          _yptMenuItem(
+                            Icons.flag_outlined,
+                            'D-Day · ${yptDdayLabel(st)}',
+                            () {
+                              Navigator.pop(dlgCtx);
+                              _yptEditDday(context, st);
+                            },
+                          ),
+                          _yptMenuItem(
+                            Icons.track_changes_outlined,
+                            st.goalMinutes > 0
+                                ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
+                                : 'Daily goal',
+                            () {
+                              Navigator.pop(dlgCtx);
+                              _yptEditGoal(context, st);
+                            },
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 16),
 
-                    // Right column: Extra features
+                    // Right column: Extra features + More
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -685,11 +705,15 @@ void showYptFeaturesMenu(BuildContext context) {
                         children: [
                           _yptCategoryTitle('Extra features'),
                           _yptMenuItem(
-                            Icons.event_note_outlined,
-                            'Planner',
+                            Icons.menu_book_outlined,
+                            'Books',
                             () {
                               Navigator.pop(dlgCtx);
-                              TabBus.index.value = 1;
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SubjectsPage(),
+                                ),
+                              );
                             },
                           ),
                           _yptMenuItem(
@@ -724,24 +748,8 @@ void showYptFeaturesMenu(BuildContext context) {
                               TabBus.index.value = 3;
                             },
                           ),
-                          _yptMenuItem(
-                            Icons.flag_outlined,
-                            'D-Day · ${yptDdayLabel(st)}',
-                            () {
-                              Navigator.pop(dlgCtx);
-                              _yptEditDday(context, st);
-                            },
-                          ),
-                          _yptMenuItem(
-                            Icons.track_changes_outlined,
-                            st.goalMinutes > 0
-                                ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
-                                : 'Daily goal',
-                            () {
-                              Navigator.pop(dlgCtx);
-                              _yptEditGoal(context, st);
-                            },
-                          ),
+                          const SizedBox(height: 18),
+                          _yptCategoryTitle('More'),
                           _yptMenuItem(
                             Icons.help_outline,
                             'Help',
