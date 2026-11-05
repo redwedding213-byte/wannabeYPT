@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +8,6 @@ import '../models.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
 import 'manual_log_dialog.dart';
-import 'allowed_sites_dialog.dart';
 import 'notifications_view.dart';
 import 'subjects_view.dart';
 import 'timetable_view.dart';
@@ -648,171 +646,173 @@ class _TimerViewState extends State<TimerView> {
     final st = context.read<AppState>();
     showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (dlgCtx) => Align(
-        alignment: Alignment.topRight,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(0, 48, 16, 0),
-          width: 380,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xCC1A1A22), // Liquid frosted glass
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.60),
-                      blurRadius: 28,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+      barrierColor: Colors.black.withValues(alpha: 0.50),
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (dlgCtx, setDlgState) {
+          final isPomo = st.pomoOn;
+          return Align(
+            alignment: Alignment.topRight,
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+              constraints: const BoxConstraints(maxWidth: 360),
+              decoration: BoxDecoration(
+                color: const Color(0xF21C1C24), // Sleek liquid frosted dark glass
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  width: 1,
                 ),
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left column: Main features
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _gridCategoryTitle('Main features'),
-                              _gridItem(
-                                  Icons.bar_chart_outlined, 'Statistics',
-                                  () {
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    blurRadius: 28,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left column: Main features
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _gridCategoryTitle('Main features'),
+                            _gridItem(
+                              Icons.bar_chart_outlined, 'Statistics',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 TabBus.index.value = 2;
-                              }),
-                              _gridItem(
-                                  Icons.star_outline_rounded, 'Rankings',
-                                  () {
+                              },
+                            ),
+                            _gridItem(
+                              Icons.star_outline_rounded, 'Rankings',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const LeaderboardsPage()));
-                              }),
-                              _gridItem(
-                                context.watch<AppState>().pomoOn
-                                    ? Icons.timer
-                                    : Icons.timer_outlined,
-                                'Pomodoro',
-                                () {
-                                  final app = context.read<AppState>();
-                                  app.setPomoOn(!app.pomoOn);
-                                },
-                                badge: context.watch<AppState>().pomoOn
-                                    ? 'ON'
-                                    : null,
-                              ),
-                              _gridItem(
-                                  Icons.lock_outline, 'Allowed Sites',
-                                  () {
-                                Navigator.pop(dlgCtx);
-                                AllowedSitesDialog.show(context);
-                              }),
-                              _gridItem(
-                                  Icons.edit_outlined, 'Edit log', () {
+                                  MaterialPageRoute(
+                                    builder: (_) => const LeaderboardsPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _gridItem(
+                              isPomo ? Icons.timer : Icons.timer_outlined,
+                              'Pomodoro',
+                              () {
+                                st.setPomoOn(!st.pomoOn);
+                                setDlgState(() {});
+                              },
+                              badge: isPomo ? 'ON' : null,
+                            ),
+                            _gridItem(
+                              Icons.edit_outlined, 'Edit log',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 _showManualLog();
-                              }),
-                              _gridItem(
-                                  Icons.wifi_off_outlined, 'Offline mode',
-                                  () {
-                                Navigator.pop(dlgCtx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Offline mode syncs automatically when offline.')),
-                                );
-                              }),
-                            ],
-                          ),
+                              },
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 14),
+                      ),
+                      const SizedBox(width: 14),
 
-                        // Right column: Extra features
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _gridCategoryTitle('Extra features'),
-                              _gridItem(
-                                  Icons.event_note_outlined, 'Planner',
-                                  () {
+                      // Right column: Extra features
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _gridCategoryTitle('Extra features'),
+                            _gridItem(
+                              Icons.event_note_outlined, 'Planner',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 TabBus.index.value = 1;
-                              }),
-                              _gridItem(
-                                  Icons.calendar_view_week_outlined,
-                                  'Timetable', () {
+                              },
+                            ),
+                            _gridItem(
+                              Icons.calendar_view_week_outlined,
+                              'Timetable',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const TimetablePage()));
-                              }),
-                              _gridItem(Icons.notifications_outlined,
-                                  'Notifications', () {
+                                  MaterialPageRoute(
+                                    builder: (_) => const TimetablePage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _gridItem(
+                              Icons.notifications_outlined,
+                              'Notifications',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const NotificationsPage()));
-                              }),
-                              _gridItem(
-                                  Icons.groups_outlined, 'Groups', () {
+                                  MaterialPageRoute(
+                                    builder: (_) => const NotificationsPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _gridItem(
+                              Icons.groups_outlined, 'Groups',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 TabBus.index.value = 3;
-                              }),
-                              _gridItem(Icons.flag_outlined,
-                                  'D-Day · ${_ddayLabel(st)}', () {
+                              },
+                            ),
+                            _gridItem(
+                              Icons.flag_outlined,
+                              'D-Day · ${_ddayLabel(st)}',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 _editDday(context);
-                              }),
-                              _gridItem(
-                                  Icons.track_changes_outlined,
-                                  st.goalMinutes > 0
-                                      ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
-                                      : 'Daily goal', () {
+                              },
+                            ),
+                            _gridItem(
+                              Icons.track_changes_outlined,
+                              st.goalMinutes > 0
+                                  ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
+                                  : 'Daily goal',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 _editGoal(context);
-                              }),
-                              _gridItem(Icons.help_outline, 'Help', () {
+                              },
+                            ),
+                            _gridItem(
+                              Icons.help_outline, 'Help',
+                              () {
                                 Navigator.pop(dlgCtx);
                                 _showHelpDialog(context);
-                              }),
-                              _gridItem(
-                                Icons.logout_rounded,
-                                'Log out',
-                                () {
-                                  Navigator.pop(dlgCtx);
-                                  st.logout();
-                                },
-                                color: Colors.redAccent,
-                              ),
-                            ],
-                          ),
+                              },
+                            ),
+                            _gridItem(
+                              Icons.logout_rounded,
+                              'Log out',
+                              () {
+                                Navigator.pop(dlgCtx);
+                                st.logout();
+                              },
+                              color: Colors.redAccent,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -887,7 +887,6 @@ class _TimerViewState extends State<TimerView> {
           'wannabeYPT is an unofficial YPT client tailored for laptop/PC study.\n\n'
           '• Timers sync with your YPT account in real time.\n'
           '• Close guard protects your session if you close the tab.\n'
-          '• Allowed Sites provides quick distraction-free study bookmarks.\n'
           '• Support / Feedback: Telegram @wannabeypt',
           style: TextStyle(fontSize: 13, color: Colors.grey),
         ),

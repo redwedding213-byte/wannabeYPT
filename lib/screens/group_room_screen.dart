@@ -12,6 +12,7 @@ import '../main.dart' show kBrand, kBg, kCard, kCard2;
 import 'timer_view.dart' show fmtMs;
 import 'stats_view.dart' show fmtHM;
 import 'member_profile_page.dart';
+import 'active_study_components.dart';
 
 /// Group room in the shape of the official YPT app: bottom tabs for
 /// Home (the member desk grid), Attendance (the week table), Rankings
@@ -275,15 +276,58 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final g = widget.group;
-    final myNick = context.read<AppState>().user?.nickname;
-    final members = _members;
-    final liveCount = members?.where((m) => m.isLive).length ?? 0;
-    return Scaffold(
-      backgroundColor: kBg,
-      appBar: AppBar(
+  String _fmtDuration(Duration d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${d.inHours}:${two(d.inMinutes % 60)}:${two(d.inSeconds % 60)}';
+  }
+
+  void _pickSubject(AppState st) {
+    final subjects = st.user?.subjects ?? const <Subject>[];
+    if (subjects.isEmpty) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xF21C1C24),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                child: Text('Select Subject',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+              for (final s in subjects)
+                ListTile(
+                  leading: Container(
+                    width: 22,
+                    height: 22,
+                    decoration:
+                        BoxDecoration(color: s.color, shape: BoxShape.circle),
+                  ),
+                  title: Text(s.title, style: const TextStyle(fontSize: 14)),
+                  trailing: Text(fmtMs(st.subjectStudyMs(s))),
+                  onTap: () {
+                    Navigator.pop(bCtx);
+                    st.startTimer(s);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _roomAppBar(AppState st, Group g) {
+    if (!st.studying) {
+      return AppBar(
         backgroundColor: kBg,
         elevation: 0,
         centerTitle: true,
@@ -296,7 +340,274 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             onPressed: _showInfo,
           ),
         ],
+      );
+    }
+
+    final sub = st.activeSubject;
+    final subTime = sub != null
+        ? Duration(
+            milliseconds:
+                st.subjectStudyMs(sub) + st.elapsed.inMilliseconds)
+        : st.elapsed;
+
+    return AppBar(
+      backgroundColor: kBg,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      title: InkWell(
+        onTap: () => _pickSubject(st),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                sub?.title ?? 'freestyle',
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _fmtDuration(subTime),
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 13,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+      actions: [
+        IconButton(
+          tooltip: 'Switch subject',
+          icon: const Icon(Icons.swap_horiz, size: 21),
+          onPressed: () => _pickSubject(st),
+        ),
+        IconButton(
+          tooltip: 'View mode',
+          icon: const Icon(Icons.aspect_ratio, size: 20),
+          onPressed: () {},
+        ),
+        IconButton(
+          tooltip: 'Features',
+          icon: const Icon(Icons.grid_view, size: 21),
+          onPressed: () => showYptFeaturesMenu(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _studyHeader(AppState st) {
+    final liveTotalMs = st.todayStudyMs + st.elapsed.inMilliseconds;
+    final pomoOn = st.pomoOn;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+      decoration: const BoxDecoration(
+        color: kBg,
+        border: Border(bottom: BorderSide(color: Color(0x14FFFFFF))),
+      ),
+      child: pomoOn
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                PomodoroDialWidget(
+                  elapsed: st.elapsed,
+                  phaseLeft: st.phaseLeft,
+                  focusMinutes: st.focusMin,
+                  size: 64,
+                ),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Remaining time',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _fmtDuration(st.phaseLeft),
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => BreakLogDialog.show(
+                          context,
+                          duration: st.elapsed,
+                          onStop: () => st.stopTimer(),
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(Icons.pause,
+                              size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const YptDeskWidget(studying: true, width: 38, height: 26),
+                    const SizedBox(height: 3),
+                    Text(
+                      fmtMs(liveTotalMs),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: kBrand,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Current focus time',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Text(
+                            _fmtDuration(st.elapsed),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w300,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          InkWell(
+                            onTap: () => BreakLogDialog.show(
+                              context,
+                              duration: st.elapsed,
+                              onStop: () => st.stopTimer(),
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(Icons.pause,
+                                  size: 18, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const YptDeskWidget(studying: true, width: 38, height: 26),
+                    const SizedBox(height: 3),
+                    Text(
+                      fmtMs(liveTotalMs),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: kBrand,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final st = context.watch<AppState>();
+    final g = widget.group;
+    final myNick = st.user?.nickname;
+    final members = _members;
+    final liveCount = members?.where((m) => m.isLive).length ?? 0;
+
+    if (st.studying) {
+      return Scaffold(
+        backgroundColor: kBg,
+        appBar: _roomAppBar(st, g),
+        body: Column(
+          children: [
+            _studyHeader(st),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+              child: Row(
+                children: [
+                  Text(
+                    g.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$liveCount members Studying',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: kBrand,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.more_horiz, size: 18),
+                    color: Colors.grey[500],
+                    onPressed: _showInfo,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child: _body(members, myNick)),
+            StudyBottomDock(onHome: () => Navigator.of(context).pop()),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: kBg,
+      appBar: _roomAppBar(st, g),
       body: Column(
         children: [
           Expanded(
@@ -473,8 +784,23 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           studying: m.isLive,
           displayMs: _displayMs(m),
           isMe: me,
-          onTap: () => showMemberProfile(context,
-              member: m, groupId: widget.group.id, isMe: me),
+          onTap: () {
+            if (me) {
+              final st = context.read<AppState>();
+              if (st.studying) {
+                BreakLogDialog.show(
+                  context,
+                  duration: st.elapsed,
+                  onStop: () => st.stopTimer(),
+                );
+              } else {
+                _pickSubject(st);
+              }
+            } else {
+              showMemberProfile(context,
+                  member: m, groupId: widget.group.id, isMe: me);
+            }
+          },
         );
       },
     );
@@ -1545,53 +1871,54 @@ class _MemberTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = member;
     final accent = studying ? kBrand : null;
-    // Official style: a small bare glyph, nothing else — no fill, no
-    // border. Only your own tile carries a thin outline. Tapping
-    // opens the member's profile, like the official app.
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: isMe
-            ? Border.all(
-                color: Colors.white.withValues(alpha: 0.30), width: 1)
-            : null,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            height: 36,
-            child: Center(child: _avatar()),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: isMe
+                ? Border.all(
+                    color: studying
+                        ? kBrand
+                        : Colors.white.withValues(alpha: 0.30),
+                    width: 1.2,
+                  )
+                : null,
           ),
-          const SizedBox(height: 6),
-          Text(
-            m.nickname,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: accent ?? Colors.grey[300],
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: 36,
+                child: Center(child: _avatar()),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                m.nickname,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: accent ?? Colors.grey[300],
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                fmtMs(displayMs),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: accent ?? Colors.grey[500],
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 3),
-          Text(
-            fmtMs(displayMs),
-            style: TextStyle(
-              fontSize: 12.5,
-              color: accent ?? Colors.grey[500],
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
         ),
       ),
     );
@@ -1599,7 +1926,7 @@ class _MemberTile extends StatelessWidget {
 
   /// Doll avatar from the studicon CDN when the payload carries a
   /// studicon id, pose by live state and today's time. Falls back to
-  /// the old glyph when there is no id or the image fails to load.
+  /// the vector YPT desk when there is no id or the image fails to load.
   Widget _avatar() {
     final si = member.studiconId;
     if (si <= 0) return _glyph();
@@ -1613,46 +1940,11 @@ class _MemberTile extends StatelessWidget {
   }
 
   Widget _glyph() {
-    if (studying) {
-      return const Icon(Icons.stay_current_portrait, color: kBrand, size: 27);
-    }
-    return CustomPaint(
-      size: const Size(42, 30),
-      painter: _DeskLampPainter(),
+    return YptDeskWidget(
+      studying: studying,
+      hasStudied: displayMs > 0,
+      width: 44,
+      height: 32,
     );
   }
-}
-
-/// Minimal desk + lamp line art, like the official app's idle member glyph.
-class _DeskLampPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = const Color(0xFF7A7A82)
-      ..strokeWidth = 2.2
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final w = size.width;
-    final h = size.height;
-    final deskY = h * 0.70;
-    // desk top
-    canvas.drawLine(Offset(w * 0.08, deskY), Offset(w * 0.92, deskY), p);
-    // legs
-    canvas.drawLine(Offset(w * 0.16, deskY), Offset(w * 0.16, h * 0.95), p);
-    canvas.drawLine(Offset(w * 0.84, deskY), Offset(w * 0.84, h * 0.95), p);
-    // lamp base + stem
-    canvas.drawLine(Offset(w * 0.64, deskY), Offset(w * 0.82, deskY), p);
-    canvas.drawLine(Offset(w * 0.73, deskY), Offset(w * 0.73, h * 0.38), p);
-    // lamp shade (trapezoid)
-    final shade = Path()
-      ..moveTo(w * 0.60, h * 0.38)
-      ..lineTo(w * 0.86, h * 0.38)
-      ..lineTo(w * 0.79, h * 0.18)
-      ..lineTo(w * 0.67, h * 0.18)
-      ..close();
-    canvas.drawPath(shade, p);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
