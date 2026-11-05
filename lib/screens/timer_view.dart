@@ -218,15 +218,6 @@ class _TimerViewState extends State<TimerView> {
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: st.goalMinutes > 0
-                    ? 'Daily goal ${st.goalMinutes ~/ 60}:${(st.goalMinutes % 60).toString().padLeft(2, '0')}'
-                    : 'Set a daily goal',
-                icon: Icon(Icons.track_changes,
-                    size: 17,
-                    color: st.goalMinutes > 0 ? Colors.grey[300] : Colors.grey[600]),
-                onPressed: () => _editGoal(context),
-              ),
             ],
           ),
         )
@@ -282,17 +273,6 @@ class _TimerViewState extends State<TimerView> {
                   const SizedBox(height: 7),
                   _goalProgress(liveMs, st.goalMinutes),
                 ],
-                IconButton(
-                  tooltip: st.goalMinutes > 0
-                      ? 'Daily goal ${st.goalMinutes ~/ 60}:${(st.goalMinutes % 60).toString().padLeft(2, '0')}'
-                      : 'Set a daily goal',
-                  icon: Icon(Icons.track_changes,
-                      size: 17,
-                      color: st.goalMinutes > 0
-                          ? Colors.grey[300]
-                          : Colors.grey[600]),
-                  onPressed: () => _editGoal(context),
-                ),
               ],
             ),
           ),
@@ -370,62 +350,33 @@ class _TimerViewState extends State<TimerView> {
                             color: Color(0x0DFFFFFF)),
                     ],
                     const SizedBox(height: 18),
-                    // Action pills under subjects list: Edit subject & Add time
+                    // Edit subject pill — flows under the rows, like the official app.
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            InkWell(
-                              onTap: () => _subjectNote(context),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                    color: kCard2,
-                                    borderRadius: BorderRadius.circular(8)),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.edit_outlined,
-                                        size: 13, color: Colors.grey[400]),
-                                    const SizedBox(width: 6),
-                                    Text('Edit subject',
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[300])),
-                                  ],
-                                ),
-                              ),
+                        padding: const EdgeInsets.only(left: 16),
+                        child: InkWell(
+                          onTap: () => _subjectNote(context),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                                color: kCard2,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.edit_outlined,
+                                    size: 13, color: Colors.grey[400]),
+                                const SizedBox(width: 6),
+                                Text('Edit subject',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[300])),
+                              ],
                             ),
-                            InkWell(
-                              onTap: _showManualLog,
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                    color: kCard2,
-                                    borderRadius: BorderRadius.circular(8)),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.add,
-                                        size: 14, color: Colors.grey[400]),
-                                    const SizedBox(width: 6),
-                                    Text('Add time',
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[300])),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -726,172 +677,133 @@ class _TimerViewState extends State<TimerView> {
                 child: Material(
                   type: MaterialType.transparency,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header
-                        Row(
-                          children: [
-                            const Text(
-                              'Features',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                        // Left column: Main features
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _gridCategoryTitle('Main features'),
+                              _gridItem(
+                                  Icons.bar_chart_outlined, 'Statistics',
+                                  () {
+                                Navigator.pop(dlgCtx);
+                                TabBus.index.value = 2;
+                              }),
+                              _gridItem(
+                                  Icons.star_outline_rounded, 'Rankings',
+                                  () {
+                                Navigator.pop(dlgCtx);
+                                Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const LeaderboardsPage()));
+                              }),
+                              _gridItem(
+                                context.watch<AppState>().pomoOn
+                                    ? Icons.timer
+                                    : Icons.timer_outlined,
+                                'Pomodoro',
+                                () {
+                                  final app = context.read<AppState>();
+                                  app.setPomoOn(!app.pomoOn);
+                                },
+                                badge: context.watch<AppState>().pomoOn
+                                    ? 'ON'
+                                    : null,
                               ),
-                            ),
-                            const Spacer(),
-                            if (st.user?.nickname != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x24FFFFFF),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  st.user!.nickname,
-                                  style: TextStyle(
-                                    color: Colors.grey[300],
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(width: 6),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              icon: const Icon(Icons.close,
-                                  size: 18, color: Colors.grey),
-                              onPressed: () => Navigator.pop(dlgCtx),
-                            ),
-                          ],
+                              _gridItem(
+                                  Icons.lock_outline, 'Allowed Sites',
+                                  () {
+                                Navigator.pop(dlgCtx);
+                                AllowedSitesDialog.show(context);
+                              }),
+                              _gridItem(
+                                  Icons.edit_outlined, 'Edit log', () {
+                                Navigator.pop(dlgCtx);
+                                _showManualLog();
+                              }),
+                              _gridItem(
+                                  Icons.wifi_off_outlined, 'Offline mode',
+                                  () {
+                                Navigator.pop(dlgCtx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Offline mode syncs automatically when offline.')),
+                                );
+                              }),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        const Divider(height: 1, color: Color(0x1AFFFFFF)),
-                        const SizedBox(height: 12),
+                        const SizedBox(width: 14),
 
-                        // Two columns of real features
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Left column: Main Navigation
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _gridCategoryTitle('Navigation'),
-                                  _gridItem(
-                                      Icons.bar_chart_outlined, 'Statistics',
-                                      () {
-                                    Navigator.pop(dlgCtx);
-                                    TabBus.index.value = 2;
-                                  }),
-                                  _gridItem(
-                                      Icons.event_note_outlined, 'Planner',
-                                      () {
-                                    Navigator.pop(dlgCtx);
-                                    TabBus.index.value = 1;
-                                  }),
-                                  _gridItem(Icons.leaderboard_outlined,
-                                      'Leaderboards', () {
-                                    Navigator.pop(dlgCtx);
-                                    Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const LeaderboardsPage()));
-                                  }),
-                                  _gridItem(
-                                      Icons.calendar_view_week_outlined,
-                                      'Timetable', () {
-                                    Navigator.pop(dlgCtx);
-                                    Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const TimetablePage()));
-                                  }),
-                                  _gridItem(Icons.notifications_outlined,
-                                      'Notifications', () {
-                                    Navigator.pop(dlgCtx);
-                                    Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const NotificationsPage()));
-                                  }),
-                                  _gridItem(
-                                      Icons.groups_outlined, 'Groups', () {
-                                    Navigator.pop(dlgCtx);
-                                    TabBus.index.value = 3;
-                                  }),
-                                ],
+                        // Right column: Extra features
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _gridCategoryTitle('Extra features'),
+                              _gridItem(
+                                  Icons.event_note_outlined, 'Planner',
+                                  () {
+                                Navigator.pop(dlgCtx);
+                                TabBus.index.value = 1;
+                              }),
+                              _gridItem(
+                                  Icons.calendar_view_week_outlined,
+                                  'Timetable', () {
+                                Navigator.pop(dlgCtx);
+                                Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const TimetablePage()));
+                              }),
+                              _gridItem(Icons.notifications_outlined,
+                                  'Notifications', () {
+                                Navigator.pop(dlgCtx);
+                                Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const NotificationsPage()));
+                              }),
+                              _gridItem(
+                                  Icons.groups_outlined, 'Groups', () {
+                                Navigator.pop(dlgCtx);
+                                TabBus.index.value = 3;
+                              }),
+                              _gridItem(Icons.flag_outlined,
+                                  'D-Day · ${_ddayLabel(st)}', () {
+                                Navigator.pop(dlgCtx);
+                                _editDday(context);
+                              }),
+                              _gridItem(
+                                  Icons.track_changes_outlined,
+                                  st.goalMinutes > 0
+                                      ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
+                                      : 'Daily goal', () {
+                                Navigator.pop(dlgCtx);
+                                _editGoal(context);
+                              }),
+                              _gridItem(Icons.help_outline, 'Help', () {
+                                Navigator.pop(dlgCtx);
+                                _showHelpDialog(context);
+                              }),
+                              _gridItem(
+                                Icons.logout_rounded,
+                                'Log out',
+                                () {
+                                  Navigator.pop(dlgCtx);
+                                  st.logout();
+                                },
+                                color: Colors.redAccent,
                               ),
-                            ),
-                            const SizedBox(width: 14),
-
-                            // Right column: Study Tools
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _gridCategoryTitle('Study Tools'),
-                                  _gridItem(
-                                    context.watch<AppState>().pomoOn
-                                        ? Icons.av_timer
-                                        : Icons.av_timer_outlined,
-                                    'Pomodoro',
-                                    () {
-                                      final app = context.read<AppState>();
-                                      app.setPomoOn(!app.pomoOn);
-                                    },
-                                    badge: context.watch<AppState>().pomoOn
-                                        ? 'ON'
-                                        : null,
-                                  ),
-                                  _gridItem(
-                                      Icons.shield_outlined, 'Allowed Sites',
-                                      () {
-                                    Navigator.pop(dlgCtx);
-                                    AllowedSitesDialog.show(context);
-                                  }),
-                                  _gridItem(
-                                      Icons.edit_calendar_outlined,
-                                      'Manual Log', () {
-                                    Navigator.pop(dlgCtx);
-                                    _showManualLog();
-                                  }),
-                                  _gridItem(
-                                      Icons.track_changes_outlined,
-                                      st.goalMinutes > 0
-                                          ? 'Goal (${st.goalMinutes ~/ 60}h)'
-                                          : 'Daily Goal', () {
-                                    Navigator.pop(dlgCtx);
-                                    _editGoal(context);
-                                  }),
-                                  _gridItem(Icons.flag_outlined,
-                                      'D-Day · ${_ddayLabel(st)}', () {
-                                    Navigator.pop(dlgCtx);
-                                    _editDday(context);
-                                  }),
-                                  _gridItem(Icons.help_outline_rounded,
-                                      'About / Help', () {
-                                    Navigator.pop(dlgCtx);
-                                    _showHelpDialog(context);
-                                  }),
-                                  _gridItem(
-                                    Icons.logout_rounded,
-                                    'Log out',
-                                    () {
-                                      Navigator.pop(dlgCtx);
-                                      st.logout();
-                                    },
-                                    color: Colors.redAccent,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
