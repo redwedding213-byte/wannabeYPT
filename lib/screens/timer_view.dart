@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import '../models.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
 import 'manual_log_dialog.dart';
+import 'allowed_sites_dialog.dart';
 import 'notifications_view.dart';
 import 'subjects_view.dart';
 import 'timetable_view.dart';
@@ -20,10 +22,11 @@ String fmt(Duration d) {
 
 String fmtMs(int ms) => fmt(Duration(milliseconds: ms));
 
-/// Under-an-hour durations as '45m 57s' (the official app's small
-/// counter style); longer ones as h:mm:ss.
+/// Official YPT style idle/rest counter: under 1m as '10s', under 1h as '45m 57s',
+/// longer as h:mm:ss.
 String fmtAgo(Duration d) {
   if (d.inHours >= 1) return fmt(d);
+  if (d.inMinutes == 0) return '${d.inSeconds}s';
   return '${d.inMinutes}m ${(d.inSeconds % 60).toString().padLeft(2, '0')}s';
 }
 
@@ -62,7 +65,7 @@ class _TimerViewState extends State<TimerView> {
         });
       }
       _wasStudying = st.studying;
-      if (!st.studying && _lastEnd != null) setState(() {});
+      if (st.studying || _shouldShowIdleTimer) setState(() {});
     });
   }
 
@@ -76,6 +79,15 @@ class _TimerViewState extends State<TimerView> {
     final d = _todayDetail;
     if (d == null || d.sessions.isEmpty) return null;
     return d.dayEnd;
+  }
+
+  /// Official YPT behaviour: idle/rest counter only displays for the first 3 hours.
+  /// After 3 hours of inactivity, it disappears completely leaving a clean clock.
+  bool get _shouldShowIdleTimer {
+    final end = _lastEnd;
+    if (end == null) return false;
+    final diff = DateTime.now().difference(end);
+    return diff >= Duration.zero && diff < const Duration(hours: 3);
   }
 
   Future<void> _loadToday({bool force = false}) async {
@@ -187,12 +199,12 @@ class _TimerViewState extends State<TimerView> {
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
                                   ]))
-                          : _lastEnd != null
+                          : _shouldShowIdleTimer
                               ? Text(
                                   fmtAgo(
                                       DateTime.now().difference(_lastEnd!)),
                                   style: TextStyle(
-                                      color: Colors.grey[600],
+                                      color: Colors.grey[500],
                                       fontSize: 11.5,
                                       fontFeatures: const [
                                         FontFeature.tabularFigures()
@@ -223,12 +235,24 @@ class _TimerViewState extends State<TimerView> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               children: [
-                Text(fmtMs(liveMs),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w300,
-                        fontFeatures: [FontFeature.tabularFigures()])),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(fmtMs(liveMs),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w300,
+                            fontFeatures: [FontFeature.tabularFigures()])),
+                    const SizedBox(width: 6),
+                    Tooltip(
+                      message: "Today's total study time (resets at 5:00 AM)",
+                      child: Icon(Icons.help_outline_rounded,
+                          size: 15, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 3),
                 SizedBox(
                   height: 16,
@@ -241,13 +265,13 @@ class _TimerViewState extends State<TimerView> {
                               fontFeatures: const [
                                 FontFeature.tabularFigures()
                               ]))
-                      : _lastEnd != null
+                      : _shouldShowIdleTimer
                           ? Text(
                               fmtAgo(
                                   DateTime.now().difference(_lastEnd!)),
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: Colors.grey[500],
                                   fontSize: 11.5,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
@@ -668,111 +692,300 @@ class _TimerViewState extends State<TimerView> {
     );
   }
 
-  // ── Grid menu (the official app's four-grid launcher) ────────────
+  // ── Grid menu (the official app's top-right features popover with liquid glass) ──
   void _showGridMenu(BuildContext context) {
     final st = context.read<AppState>();
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: kCard,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-      builder: (sheetCtx) => StatefulBuilder(
-        builder: (sheetCtx, setSheet) => Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 26),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Text('Features',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  Text(st.user?.nickname ?? '',
-                      style:
-                          TextStyle(color: Colors.grey[400], fontSize: 12.5)),
-                ],
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (dlgCtx) => Align(
+        alignment: Alignment.topRight,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(0, 48, 16, 0),
+          width: 380,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xCC1A1A22), // Liquid frosted glass
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.60),
+                      blurRadius: 28,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header
+                        Row(
+                          children: [
+                            const Text(
+                              'Features',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (st.user?.nickname != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x24FFFFFF),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  st.user!.nickname,
+                                  style: TextStyle(
+                                    color: Colors.grey[300],
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(width: 6),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: const Icon(Icons.close,
+                                  size: 18, color: Colors.grey),
+                              onPressed: () => Navigator.pop(dlgCtx),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Divider(height: 1, color: Color(0x1AFFFFFF)),
+                        const SizedBox(height: 12),
+
+                        // Two columns of real features
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Left column: Main Navigation
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _gridCategoryTitle('Navigation'),
+                                  _gridItem(
+                                      Icons.bar_chart_outlined, 'Statistics',
+                                      () {
+                                    Navigator.pop(dlgCtx);
+                                    TabBus.index.value = 2;
+                                  }),
+                                  _gridItem(
+                                      Icons.event_note_outlined, 'Planner',
+                                      () {
+                                    Navigator.pop(dlgCtx);
+                                    TabBus.index.value = 1;
+                                  }),
+                                  _gridItem(Icons.leaderboard_outlined,
+                                      'Leaderboards', () {
+                                    Navigator.pop(dlgCtx);
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const LeaderboardsPage()));
+                                  }),
+                                  _gridItem(
+                                      Icons.calendar_view_week_outlined,
+                                      'Timetable', () {
+                                    Navigator.pop(dlgCtx);
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const TimetablePage()));
+                                  }),
+                                  _gridItem(Icons.notifications_outlined,
+                                      'Notifications', () {
+                                    Navigator.pop(dlgCtx);
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const NotificationsPage()));
+                                  }),
+                                  _gridItem(
+                                      Icons.groups_outlined, 'Groups', () {
+                                    Navigator.pop(dlgCtx);
+                                    TabBus.index.value = 3;
+                                  }),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+
+                            // Right column: Study Tools
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _gridCategoryTitle('Study Tools'),
+                                  _gridItem(
+                                    context.watch<AppState>().pomoOn
+                                        ? Icons.av_timer
+                                        : Icons.av_timer_outlined,
+                                    'Pomodoro',
+                                    () {
+                                      final app = context.read<AppState>();
+                                      app.setPomoOn(!app.pomoOn);
+                                    },
+                                    badge: context.watch<AppState>().pomoOn
+                                        ? 'ON'
+                                        : null,
+                                  ),
+                                  _gridItem(
+                                      Icons.shield_outlined, 'Allowed Sites',
+                                      () {
+                                    Navigator.pop(dlgCtx);
+                                    AllowedSitesDialog.show(context);
+                                  }),
+                                  _gridItem(
+                                      Icons.edit_calendar_outlined,
+                                      'Manual Log', () {
+                                    Navigator.pop(dlgCtx);
+                                    _showManualLog();
+                                  }),
+                                  _gridItem(
+                                      Icons.track_changes_outlined,
+                                      st.goalMinutes > 0
+                                          ? 'Goal (${st.goalMinutes ~/ 60}h)'
+                                          : 'Daily Goal', () {
+                                    Navigator.pop(dlgCtx);
+                                    _editGoal(context);
+                                  }),
+                                  _gridItem(Icons.flag_outlined,
+                                      'D-Day · ${_ddayLabel(st)}', () {
+                                    Navigator.pop(dlgCtx);
+                                    _editDday(context);
+                                  }),
+                                  _gridItem(Icons.help_outline_rounded,
+                                      'About / Help', () {
+                                    Navigator.pop(dlgCtx);
+                                    _showHelpDialog(context);
+                                  }),
+                                  _gridItem(
+                                    Icons.logout_rounded,
+                                    'Log out',
+                                    () {
+                                      Navigator.pop(dlgCtx);
+                                      st.logout();
+                                    },
+                                    color: Colors.redAccent,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
-              _menuRow(sheetCtx, Icons.bar_chart_outlined, 'Statistics', () {
-                Navigator.pop(sheetCtx);
-                TabBus.index.value = 2;
-              }),
-              _menuRow(sheetCtx, Icons.event_note_outlined, 'Planner', () {
-                Navigator.pop(sheetCtx);
-                TabBus.index.value = 1;
-              }),
-              _menuRow(sheetCtx, Icons.leaderboard_outlined, 'Leaderboards',
-                  () {
-                Navigator.pop(sheetCtx);
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const LeaderboardsPage()));
-              }),
-              _menuRow(
-                  sheetCtx, Icons.notifications_outlined, 'Notifications',
-                  () {
-                Navigator.pop(sheetCtx);
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const NotificationsPage()));
-              }),
-              _menuRow(
-                  sheetCtx, Icons.calendar_view_week_outlined, 'Timetable',
-                  () {
-                Navigator.pop(sheetCtx);
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const TimetablePage()));
-              }),
-              _menuRow(sheetCtx, Icons.groups_outlined, 'Groups', () {
-                Navigator.pop(sheetCtx);
-                TabBus.index.value = 3;
-              }),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                secondary: const Icon(Icons.av_timer, size: 21),
-                title: const Text('Pomodoro', style: TextStyle(fontSize: 14)),
-                subtitle: const Text(
-                    'Edit the lengths in the panel on the Timer screen',
-                    style: TextStyle(fontSize: 11)),
-                value: st.pomoOn,
-                activeThumbColor: kBrand,
-                onChanged: (v) {
-                  st.setPomoOn(v);
-                  setSheet(() {});
-                },
-              ),
-              _menuRow(sheetCtx, Icons.flag_outlined,
-                  'D-Day · ${_ddayLabel(st)}', () {
-                Navigator.pop(sheetCtx);
-                _editDday(context);
-              }),
-              _menuRow(sheetCtx, Icons.track_changes_outlined,
-                  st.goalMinutes > 0
-                      ? 'Daily goal · ${st.goalMinutes ~/ 60}:${(st.goalMinutes % 60).toString().padLeft(2, '0')}'
-                      : 'Daily goal', () {
-                Navigator.pop(sheetCtx);
-                _editGoal(context);
-              }),
-              const Divider(height: 22, color: Colors.white10),
-              _menuRow(sheetCtx, Icons.logout, 'Log out', () {
-                Navigator.pop(sheetCtx);
-                st.logout();
-              }, color: Colors.redAccent),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _menuRow(BuildContext ctx, IconData icon, String label,
-      VoidCallback onTap,
-      {Color? color}) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, size: 21, color: color),
-      title: Text(label, style: TextStyle(fontSize: 14, color: color)),
+  Widget _gridCategoryTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey[500],
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
+  Widget _gridItem(IconData icon, String label, VoidCallback onTap,
+      {String? badge, Color? color}) {
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 15, color: color ?? Colors.grey[300]),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: color ?? Colors.white,
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (badge != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: kBrand,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: kCard,
+        title: const Text('wannabeYPT Help', style: TextStyle(fontSize: 16)),
+        content: const Text(
+          'wannabeYPT is an unofficial YPT client tailored for laptop/PC study.\n\n'
+          '• Timers sync with your YPT account in real time.\n'
+          '• Close guard protects your session if you close the tab.\n'
+          '• Allowed Sites provides quick distraction-free study bookmarks.\n'
+          '• Support / Feedback: Telegram @wannabeypt',
+          style: TextStyle(fontSize: 13, color: Colors.grey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -952,7 +1165,7 @@ class _SubjectRow extends StatelessWidget {
                     BoxDecoration(color: s.color, shape: BoxShape.circle),
                 child: Icon(
                     active ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: const Color(0xFF141419),
+                    color: Colors.white,
                     size: compact ? 15 : 17),
               ),
               const SizedBox(width: 13),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ import 'planner_view.dart';
 import 'stats_view.dart';
 import 'groups_view.dart';
 import 'group_room_screen.dart';
+import 'allowed_sites_dialog.dart';
 
 /// Lets inner views (the Timer tab strip, the grid menu) switch the
 /// shell's main tab, like the official app's home tabs do.
@@ -191,6 +193,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     bottom: 14,
                     child: Center(child: _navPill(context)),
                   ),
+                  if (st.studying)
+                    Positioned(
+                      right: 18,
+                      bottom: 18,
+                      child: _allowedSitesPill(context),
+                    ),
                 ],
               ),
             ),
@@ -284,6 +292,49 @@ class _HomeScreenState extends State<HomeScreen> {
         minimumSize: const Size(0, 28),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       );
+
+  Widget _allowedSitesPill(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: InkWell(
+          onTap: () => AllowedSitesDialog.show(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xB31C1C22),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.shield_outlined, size: 13, color: Colors.grey[300]),
+                const SizedBox(width: 6),
+                Text(
+                  'Allowed Sites',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Colors.grey[200],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _navPill(BuildContext context) {
     final items = <(IconData, IconData, String)>[
