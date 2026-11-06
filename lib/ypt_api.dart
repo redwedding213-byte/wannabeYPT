@@ -949,15 +949,25 @@ class YptApi {
   }
 
   /// POST /study/stop — 타이머 정지. startedAt=시작 epoch(ms).
-  Future<DayLog?> studyStop(int startedAtMs) async {
-    final r = await _post(
-        '/study/stop', {'startedAt': startedAtMs, 'deviceModel': deviceModel});
-    _ensureOk(r, 'study/stop');
+  /// [studyMs] is the real elapsed ms (Desky sends `study_ms` too); the
+  /// server credits exactly that, so a stop replayed minutes later from
+  /// the offline queue still lands the right duration. Accepts any 2xx
+  /// (see [_ok2xx]) so a 201 create is not mistaken for a failure.
+  Future<DayLog?> studyStop(int startedAtMs, {int? studyMs}) async {
+    final r = await _post('/study/stop', {
+      'startedAt': startedAtMs,
+      'deviceModel': deviceModel,
+      if (studyMs != null) 'study_ms': studyMs,
+    });
+    if (!_ok2xx(r)) {
+      throw YptApiException('study/stop HTTP ${r.statusCode}');
+    }
     final j = _decodeObject(r);
     if (j['s'] == true && j['dl'] is Map<String, dynamic>) {
       return DayLog.fromJson(j['dl']);
     }
-    throw YptApiException(j['c']?.toString() ?? 'study/stop failed');
+    throw YptApiException(
+        _serverMessage(j) ?? j['c']?.toString() ?? 'study/stop failed');
   }
 
   /// GET /logs/day?date= — raw payload (totals + timed sessions).

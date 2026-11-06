@@ -302,6 +302,48 @@ class _TimerViewState extends State<TimerView> {
                     const TextStyle(color: Colors.redAccent, fontSize: 12)),
           ),
         ],
+        // Offline sync queue: a stop that never reached the server is
+        // kept and replayed on reconnect. Tap to retry now.
+        if (st.pendingSyncCount > 0) ...[
+          const SizedBox(height: 8),
+          Center(
+            child: InkWell(
+              onTap: st.syncingPending
+                  ? null
+                  : () => context.read<AppState>().syncPendingSessions(),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                decoration: BoxDecoration(
+                    color: kCard2, borderRadius: BorderRadius.circular(16)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (st.syncingPending)
+                      const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                    else
+                      const Icon(Icons.cloud_upload_outlined,
+                          size: 14, color: Colors.amber),
+                    const SizedBox(width: 6),
+                    Text(
+                      st.syncingPending
+                          ? 'Syncing…'
+                          : st.lastSyncError != null
+                              ? '${st.pendingSyncCount} session${st.pendingSyncCount == 1 ? '' : 's'} waiting to sync · ${st.lastSyncError}'
+                              : '${st.pendingSyncCount} session${st.pendingSyncCount == 1 ? '' : 's'} waiting to sync — tap to retry',
+                      style:
+                          const TextStyle(color: Colors.amber, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         _tabStrip(context),
         if (st.pomoNoticeTitle != null) const _PomoNoticeBanner(),

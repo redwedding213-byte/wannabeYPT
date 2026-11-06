@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'offline_sync.dart';
+import 'online_events.dart';
 import 'ypt_api.dart';
 import 'models.dart';
 import 'notify.dart';
@@ -13,6 +15,9 @@ class AppState extends ChangeNotifier {
   AppState() {
     _loadLocal();
     _syncWebState();
+    // Hotspot back → flush any queued stops right away. The 60s retry
+    // timer is the backstop if this event never fires.
+    listenForOnline(() => syncPendingSessions());
   }
   UserData? user;
   bool loading = false;
@@ -27,6 +32,76 @@ class AppState extends ChangeNotifier {
   Duration elapsed = Duration.zero;
   bool timerLoading = false;
   String? timerErrorText;
+
+  // 오프라인 동기화 큐 — 핫스팟이 끊긴 채 정지한 세션.
+  // A stop that never reached the server is queued with its real
+  // start/stop times and replayed on reconnect — never lost, never typed.
+  final OfflineSyncQueue _offlineQueue = OfflineSyncQueue();
+  int pendingSyncCount = 0;
+  bool syncingPending = false;
+  String? lastSyncError;
+  Timer? _syncRetryTimer;
+
+  /// Replays queued stops in order. Safe to call any time: no-ops when
+  /// logged out, already syncing, or when nothing is pending. On success
+  /// refreshes today's totals; failures stay queued with the server's
+  /// message and the retry timer keeps trying.
+  Future<void> syncPendingSessions() async {
+    if (user == null || syncingPending) return;
+    List<OfflineSession> pending;
+    try {
+      pending = await _offlineQueue.getPending();
+    } catch (_) {
+      return;
+    }
+    if (pending.isEmpty) {
+      pendingSyncCount = 0;
+      lastSyncError = null;
+      _stopSyncRetryTimer();
+      notifyListeners();
+      return;
+    }
+    syncingPending = true;
+    lastSyncError = null;
+    notifyListeners();
+    SyncResult result;
+    try {
+      result = await _offlineQueue.syncAll(api);
+    } catch (_) {
+      // Storage failure mid-sync: keep the count, try again later.
+      syncingPending = false;
+      _startSyncRetryTimer();
+      notifyListeners();
+      return;
+    }
+    pendingSyncCount = result.remaining;
+    lastSyncError = result.failed > 0 ? result.lastError : null;
+    syncingPending = false;
+    if (result.synced > 0) {
+      try {
+        user = await api.reloadInfo();
+        await _refreshSubjectTimesQuietly();
+      } catch (_) {}
+    }
+    if (result.remaining > 0) {
+      _startSyncRetryTimer();
+    } else {
+      _stopSyncRetryTimer();
+    }
+    notifyListeners();
+  }
+
+  void _startSyncRetryTimer() {
+    _syncRetryTimer ??= Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => syncPendingSessions(),
+    );
+  }
+
+  void _stopSyncRetryTimer() {
+    _syncRetryTimer?.cancel();
+    _syncRetryTimer = null;
+  }
 
   // 과목별 오늘 공부시간. /logs/day 응답이 비거나 제목 표기가 살짝 달라도
   // reload/info 의 subject 시간 값을 fallback으로 쓴다.
@@ -620,6 +695,7 @@ class AppState extends ChangeNotifier {
     }
     loading = false;
     notifyListeners();
+    if (user != null) unawaited(syncPendingSessions());
   }
 
   Future<bool> login(String email, String password) async {
@@ -636,6 +712,7 @@ class AppState extends ChangeNotifier {
           await _refreshSubjectTimesQuietly(); // 과목별 오늘 시간
           loading = false;
           notifyListeners();
+          unawaited(syncPendingSessions());
           return true;
         case SignInError(:final code):
           errorText = errorMessage(code);
@@ -670,6 +747,7 @@ class AppState extends ChangeNotifier {
           await _refreshSubjectTimesQuietly();
           loading = false;
           notifyListeners();
+          unawaited(syncPendingSessions());
           return true;
         case SignInError(:final code):
           errorText = errorMessage(code);
@@ -703,6 +781,12 @@ class AppState extends ChangeNotifier {
     timerErrorText = null;
     statsErrorText = null;
     groupsErrorText = null;
+    // The queue itself stays in SharedPreferences — its sessions belong
+    // to the account and sync on the next login.
+    _stopSyncRetryTimer();
+    pendingSyncCount = 0;
+    syncingPending = false;
+    lastSyncError = null;
     notifyListeners();
   }
 
@@ -726,6 +810,8 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       timerErrorText = 'Could not start timer: ${_readableError(e)}';
     }
+    // Network is up (start just succeeded) — flush any queued stops.
+    if (activeSubject != null) unawaited(syncPendingSessions());
     timerLoading = false;
     notifyListeners();
   }
@@ -757,10 +843,37 @@ class AppState extends ChangeNotifier {
       user = await api.reloadInfo(); // 오늘 총시간 갱신
       await _refreshSubjectTimesQuietly(); // 과목별 시간 갱신
     } catch (e) {
-      activeSubject = previousSubject;
-      _startedAtMs = started;
-      _startTicker();
-      timerErrorText = 'Could not stop timer: ${_readableError(e)}';
+      if (isNetworkError(e)) {
+        // Hotspot dropped while stopping: the session is real, so keep
+        // it. Queue the stop with the real start/stop times; it replays
+        // on reconnect. The local timer stays stopped.
+        final stopAtMs = DateTime.now().millisecondsSinceEpoch;
+        final studyMs = stopAtMs - started;
+        if (studyMs > 0) {
+          await _offlineQueue.enqueue(OfflineSession(
+            id: '${started}_${previousSubject.id}',
+            subjectId: previousSubject.id,
+            subjectTitle: previousSubject.title,
+            startAtMs: started,
+            stopAtMs: stopAtMs,
+            studyMs: studyMs,
+            createdAtMs: stopAtMs,
+          ));
+          pendingSyncCount = (await _offlineQueue.getPending()).length;
+          lastSyncError = null;
+          timerErrorText = null;
+          _startSyncRetryTimer();
+        } else {
+          timerErrorText = 'Could not stop timer: ${_readableError(e)}';
+        }
+      } else {
+        // Server rejected the stop — keep the old behaviour: restore the
+        // timer so the user can stop again, show the server's message.
+        activeSubject = previousSubject;
+        _startedAtMs = started;
+        _startTicker();
+        timerErrorText = 'Could not stop timer: ${_readableError(e)}';
+      }
     }
     timerLoading = false;
     notifyListeners();
@@ -917,6 +1030,7 @@ class AppState extends ChangeNotifier {
     setWebCloseGuard(false);
     setWebPageTitle('wannabeYPT');
     _ticker?.cancel();
+    _syncRetryTimer?.cancel();
     api.close();
     super.dispose();
   }
