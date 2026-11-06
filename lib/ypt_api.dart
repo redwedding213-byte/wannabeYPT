@@ -396,19 +396,10 @@ class YptApi {
     }
   }
 
-  // ---- Flashcards / Books (Desky parity, built 2026-11-06) ----
-  // Endpoints + bodies mirror Desky's flashcard_repository.dart
-  // exactly: POST /card/book/list, /card/book/create, /card/book/delete,
-  // /card/list, /card/create, /card/delete, /card/review.
-  //
-  // THE 2026-10-29 FIX: the removed Books build required exactly
-  // HTTP 200 and swallowed the server's error message, so deck
-  // creation failed live with a generic "Couldn't create that deck".
-  // Desky's client accepts any status < 500 (its Dio validateStatus),
-  // so a 201 create succeeds there. Every method below therefore
-  // accepts ANY 2xx as transport success ([_ok2xx]) and, on a
-  // server rejection, throws/returns with the server's `m` message
-  // so the UI shows the real reason instead of a generic failure.
+  // ---- Shared transport helpers (used by challenges, studicons,
+  // shakes and the other Desky-port sections) ----
+  // Accept ANY 2xx as transport success: the server answers some
+  // creates with 201, and Desky's client accepts any status < 500.
   // Success still requires the body's `s == true`.
   bool _ok2xx(http.Response r) =>
       r.statusCode >= 200 && r.statusCode < 300;
@@ -417,171 +408,6 @@ class YptApi {
   String? _serverMessage(Map<String, dynamic> j) {
     final m = j['m']?.toString();
     return (m == null || m.trim().isEmpty) ? null : m;
-  }
-
-  /// POST /card/book/list {language} → {s, list: [deck...]}.
-  /// Throws on transport or server failure so the caller can tell a
-  /// failed load apart from a genuinely empty shelf.
-  Future<List<FlashcardDeck>> fetchDecks() async {
-    final r = await _post('/card/book/list', {'language': 'en'});
-    if (!_ok2xx(r)) {
-      throw YptApiException('card/book/list HTTP ${r.statusCode}');
-    }
-    final j = _decodeObject(r);
-    if (j['s'] != true) {
-      throw YptApiException(
-          _serverMessage(j) ?? 'Could not load your decks.');
-    }
-    final list = j['list'] ?? j['books'] ?? j['data'];
-    if (list is! List) return [];
-    return list
-        .whereType<Map<String, dynamic>>()
-        .map(FlashcardDeck.fromJson)
-        .toList();
-  }
-
-  /// POST /card/book/create {name, color, description} → {s, book}.
-  /// color is the ARGB int. Throws [YptApiException] carrying the
-  /// server's `m` message when the server rejects the create.
-  Future<FlashcardDeck> createDeck({
-    required String title,
-    required int colorInt,
-    String? description,
-  }) async {
-    final r = await _post('/card/book/create', {
-      'name': title,
-      'color': colorInt,
-      'description': description ?? '',
-    });
-    if (!_ok2xx(r)) {
-      String? serverMsg;
-      try {
-        serverMsg = _serverMessage(_decodeObject(r));
-      } catch (_) {}
-      throw YptApiException(serverMsg ??
-          'Could not create that deck (HTTP ${r.statusCode}).');
-    }
-    final j = _decodeObject(r);
-    if (j['s'] != true) {
-      throw YptApiException(
-          _serverMessage(j) ?? 'Could not create that deck.');
-    }
-    final bookJson = j['book'] ?? j['data'];
-    if (bookJson is Map<String, dynamic>) {
-      return FlashcardDeck.fromJson(bookJson);
-    }
-    // The server confirmed but returned no book object — keep the
-    // deck visible with the values just sent.
-    return FlashcardDeck(
-      id: intValue(j['id']),
-      title: title,
-      description: description,
-      colorValue: colorInt,
-    );
-  }
-
-  /// POST /card/book/delete {id, book_id} → s == true.
-  Future<bool> deleteDeck(int deckId) async {
-    try {
-      final r = await _post(
-          '/card/book/delete', {'id': deckId, 'book_id': deckId});
-      if (!_ok2xx(r)) return false;
-      return _decodeObject(r)['s'] == true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// POST /card/list {book_id} → {s, list: [card...]}.
-  Future<List<Flashcard>> fetchCards(int deckId) async {
-    final r = await _post('/card/list', {'book_id': deckId});
-    if (!_ok2xx(r)) {
-      throw YptApiException('card/list HTTP ${r.statusCode}');
-    }
-    final j = _decodeObject(r);
-    if (j['s'] != true) {
-      throw YptApiException(
-          _serverMessage(j) ?? 'Could not load the cards.');
-    }
-    final list = j['list'] ?? j['cards'] ?? j['data'];
-    if (list is! List) return [];
-    return list
-        .whereType<Map<String, dynamic>>()
-        .map(Flashcard.fromJson)
-        .toList();
-  }
-
-  /// POST /card/create {book_id, question, answer, hint} → {s, card}.
-  /// Throws [YptApiException] with the server's `m` on rejection.
-  Future<Flashcard> createCard({
-    required int deckId,
-    required String front,
-    required String back,
-    String? hint,
-  }) async {
-    final r = await _post('/card/create', {
-      'book_id': deckId,
-      'question': front,
-      'answer': back,
-      'hint': hint ?? '',
-    });
-    if (!_ok2xx(r)) {
-      String? serverMsg;
-      try {
-        serverMsg = _serverMessage(_decodeObject(r));
-      } catch (_) {}
-      throw YptApiException(serverMsg ??
-          'Could not add that card (HTTP ${r.statusCode}).');
-    }
-    final j = _decodeObject(r);
-    if (j['s'] != true) {
-      throw YptApiException(
-          _serverMessage(j) ?? 'Could not add that card.');
-    }
-    final cardJson = j['card'] ?? j['data'];
-    if (cardJson is Map<String, dynamic>) {
-      return Flashcard.fromJson(cardJson);
-    }
-    return Flashcard(
-      id: intValue(j['id']),
-      deckId: deckId,
-      front: front,
-      back: back,
-      hint: hint,
-    );
-  }
-
-  /// POST /card/delete {id, card_id} → s == true.
-  Future<bool> deleteCard(int cardId) async {
-    try {
-      final r =
-          await _post('/card/delete', {'id': cardId, 'card_id': cardId});
-      if (!_ok2xx(r)) return false;
-      return _decodeObject(r)['s'] == true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// POST /card/review {id, card_id, ease_factor} → s == true.
-  /// ease_factor: 1 hard, 2 good, 3 easy. The server owns SM-2
-  /// scheduling; this only reports the rating. Never throws — a
-  /// failed review must not break the study session.
-  Future<bool> submitCardReview({
-    required int cardId,
-    required int easeFactor,
-  }) async {
-    try {
-      final r = await _post('/card/review', {
-        'id': cardId,
-        'card_id': cardId,
-        'ease_factor': easeFactor,
-      });
-      if (!_ok2xx(r)) return false;
-      return _decodeObject(r)['s'] == true;
-    } catch (_) {
-      return false;
-    }
   }
 
   // ---- Challenges (Desky parity, built 2026-11-06) ----
@@ -593,7 +419,7 @@ class YptApi {
   // `name`/`description`/… and would have shown defaults). The
   // model in models.dart accepts both shapes.
   //
-  // Same transport rules as flashcards: any 2xx is success
+  // Transport rules: any 2xx is success
   // ([_ok2xx]); a server rejection throws with the server's `m`
   // message so the UI shows the real reason. Success still
   // requires the body's `s == true`.
@@ -758,33 +584,23 @@ class YptApi {
   //   GET  /studicon/list/wish, /studicon/my/list
   //   POST /user/studicon (equip)
   //
-  // TWO BASES, and the split matters on the web:
-  // - The catalog lists (famous/new/tag) live on the metadata CDN
-  //   https://picf.tgclab.com, and CloudFront there 403s EVERY
-  //   OPTIONS request — so any Authorization or
-  //   Content-Type: application/json header would make the browser
-  //   preflight and block the call. The catalog is public (a
-  //   header-less GET returns {s: true, scs: [...]}), so these calls
-  //   go out with NO custom headers ([_getPublic]) — a CORS-simple
-  //   request the CDN answers with the Origin echoed back.
-  // - my/list, wish and equip live on the main API (pi.tgclab.com),
-  //   whose preflight works, so they use the normal authed [_get]/[_post].
+  // ALL of these go through the main API (pi.tgclab.com) with the
+  // normal authed [_get]/[_post]. The catalog was first pointed at
+  // the picf.tgclab.com CDN because CloudFront there 403s OPTIONS
+  // preflights — but the CDN proved unreliable from the browser
+  // ("Load failed" live, 2026-11-06, even though curl returned the
+  // catalog fine). pi.tgclab.com returns the SAME {s, scs, hm} shape
+  // for /studicon/list/famous (verified with curl), and its preflight
+  // works, so the CDN is not used at all anymore.
   // All reads use [_ok2xx] (any 2xx) and surface the server's `m`,
-  // same as flashcards/challenges. Equip throws on failure (Desky
+  // same as challenges. Equip throws on failure (Desky
   // swallows equip errors and returns true — this code does not).
-  static const String _studiconCdn = 'https://picf.tgclab.com';
 
-  /// GET against an absolute URL with NO custom headers. Only for
-  /// the public picf CDN — see the section note above.
-  Future<http.Response> _getPublic(String url) =>
-      _client.get(Uri.parse(url)).timeout(requestTimeout);
-
-  /// One catalog page from the picf CDN.
+  /// One catalog page from the main API.
   /// Returns (items, hasMore). `hm` is the server's "has more pages".
   Future<(List<StudiconItem>, bool)> _fetchStudiconPage(
       String kind, int page) async {
-    final r = await _getPublic(
-        '$_studiconCdn/studicon/list/$kind?p=$page&lang=en');
+    final r = await _get('/studicon/list/$kind?p=$page&lang=en');
     if (!_ok2xx(r)) {
       throw YptApiException('studicon/list/$kind HTTP ${r.statusCode}');
     }
@@ -817,11 +633,11 @@ class YptApi {
     return out;
   }
 
-  /// Famous studicons (picf CDN), paginated. See [_fetchStudiconList].
+  /// Famous studicons (main API), paginated. See [_fetchStudiconList].
   Future<List<StudiconItem>> fetchFamousStudicons() =>
       _fetchStudiconList('famous');
 
-  /// New studicons (picf CDN), paginated.
+  /// New studicons (main API), paginated.
   Future<List<StudiconItem>> fetchNewStudicons() =>
       _fetchStudiconList('new');
 
@@ -841,12 +657,12 @@ class YptApi {
     return byId.values.toList();
   }
 
-  /// GET /studicon/list/tag (picf CDN) → {s, ts: [{id, tk, te}]}.
+  /// GET /studicon/list/tag (main API) → {s, ts: [{id, tk, te}]}.
   /// This returns the TAG list, not studicons: there is no
   /// "list items by tag id" endpoint in the spec or in Desky, so
   /// the store filters the catalog client-side by item tags.
   Future<List<StudiconTag>> fetchStudiconTags() async {
-    final r = await _getPublic('$_studiconCdn/studicon/list/tag?lang=en');
+    final r = await _get('/studicon/list/tag?lang=en');
     if (!_ok2xx(r)) {
       throw YptApiException('studicon/list/tag HTTP ${r.statusCode}');
     }
@@ -1136,16 +952,22 @@ class YptApi {
   /// POST /group/push/shake — nudge one group member.
   /// Desky sends {groupID, targetUserID}; the spec's captured-traffic
   /// example sends {user_id, group_id, from}. Both key styles are
-  /// sent — the server ignores unknown fields. Accepts any 2xx
-  /// ([_ok2xx]) and throws [YptApiException] with the server's `m`
-  /// message on rejection, so the UI shows the real reason.
-  Future<bool> shakeMember(
-      {required int groupId, required int targetUserId}) async {
+  /// sent — the server ignores unknown fields. `from` is the sender's
+  /// nickname and is REQUIRED: without it the server 500s (live-tested
+  /// 2026-11-06). Accepts any 2xx ([_ok2xx]) and throws
+  /// [YptApiException] with the server's `m` message on rejection,
+  /// so the UI shows the real reason.
+  Future<bool> shakeMember({
+    required int groupId,
+    required int targetUserId,
+    required String from,
+  }) async {
     final r = await _post('/group/push/shake', {
       'groupID': groupId,
       'targetUserID': targetUserId,
       'group_id': groupId,
       'user_id': targetUserId,
+      'from': from,
     });
     if (!_ok2xx(r)) {
       throw YptApiException('group/push/shake HTTP ${r.statusCode}');
@@ -1157,11 +979,14 @@ class YptApi {
   }
 
   /// POST /group/push/shake/all — nudge every member of the group.
-  /// Same 2xx + `m` handling as [shakeMember].
-  Future<bool> shakeAllMembers(int groupId) async {
+  /// Spec's captured-traffic example is {groupID, from}; `from` is
+  /// the sender's nickname and is REQUIRED (same 500 without it as
+  /// the single shake). Same 2xx + `m` handling as [shakeMember].
+  Future<bool> shakeAllMembers(int groupId, {required String from}) async {
     final r = await _post('/group/push/shake/all', {
       'groupID': groupId,
       'group_id': groupId,
+      'from': from,
     });
     if (!_ok2xx(r)) {
       throw YptApiException('group/push/shake/all HTTP ${r.statusCode}');

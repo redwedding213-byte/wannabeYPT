@@ -10,13 +10,12 @@ import '../ypt_api.dart';
 /// touches study time or the timer.
 ///
 /// Endpoints (Desky's store_repository.dart + the captured-traffic
-/// spec): the famous/new/tag lists live on the picf metadata CDN
-/// and are fetched with NO auth headers — CloudFront there 403s
-/// every OPTIONS preflight, so an Authorization header would make
-/// the browser block the call (the catalog is public, a header-less
-/// GET returns it). my/list, wish and equip live on the main API
-/// and use the normal authed calls. All reads accept any 2xx and
-/// surface the server's `m` message on failure.
+/// spec): famous/new/tag, my/list, wish and equip all go through
+/// the main API (pi.tgclab.com) with the normal authed calls. The
+/// catalog was first pointed at the picf.tgclab.com CDN, but the CDN
+/// proved unreliable from the browser ("Load failed" live, 2026-11-06)
+/// and pi returns the same shape, so the CDN is not used. All reads
+/// accept any 2xx and surface the server's `m` message on failure.
 ///
 /// What this store does NOT do: buy. There is no purchase endpoint
 /// in Desky or the spec, and Desky's store only ever equips owned

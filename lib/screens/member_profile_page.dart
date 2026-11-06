@@ -126,6 +126,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
     // async gap is what the linter flags, and the State's `mounted`
     // does not guard it.
     final api = context.read<AppState>().api;
+    final from = context.read<AppState>().user?.nickname ?? '';
     final messenger = ScaffoldMessenger.of(context);
     final send = await showDialog<bool>(
       context: context,
@@ -150,7 +151,8 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
     if (send != true || !mounted) return;
     setState(() => _shaking = true);
     try {
-      await api.shakeMember(groupId: widget.groupId, targetUserId: m.userId);
+      await api.shakeMember(
+          groupId: widget.groupId, targetUserId: m.userId, from: from);
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(

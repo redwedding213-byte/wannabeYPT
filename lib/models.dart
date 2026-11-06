@@ -1179,92 +1179,6 @@ class StickerSet {
   }
 }
 
-/// Flashcards / Books (Desky parity, built 2026-11-06).
-/// Deck = a "book" on the server: POST /card/book/*. Card = one
-/// front/back pair: POST /card/*. The server owns SM-2 scheduling —
-/// the client only reports the ease factor (1 hard, 2 good, 3 easy)
-/// through POST /card/review.
-class FlashcardDeck {
-  final int id;
-  final String title; // name
-  final String? description;
-  final int colorValue; // color — ARGB int
-  final int cardCount;
-  final DateTime? createdAt;
-
-  FlashcardDeck({
-    required this.id,
-    required this.title,
-    this.description,
-    required this.colorValue,
-    this.cardCount = 0,
-    this.createdAt,
-  });
-
-  factory FlashcardDeck.fromJson(Map<String, dynamic> j) {
-    var createdMs = firstIntValue(j, const ['created_at', 'createdAt', 'ct']);
-    return FlashcardDeck(
-      id: firstIntValue(j, const ['id', 'book_id', 'bookId']),
-      title: firstStringValue(j, const ['name', 'title']) ?? 'Deck',
-      description: firstStringValue(j, const ['description', 'desc']),
-      colorValue:
-          firstIntValue(j, const ['color', 'co', 'c'], fallback: 0xFFE8552D),
-      cardCount:
-          firstIntValue(j, const ['card_count', 'count', 'cardCount', 'cc']),
-      createdAt: createdMs > 0
-          ? DateTime.fromMillisecondsSinceEpoch(createdMs)
-          : null,
-    );
-  }
-
-  Color get color => Color(colorValue == 0 ? 0xFFE8552D : colorValue);
-
-  FlashcardDeck copyWith({int? cardCount}) => FlashcardDeck(
-        id: id,
-        title: title,
-        description: description,
-        colorValue: colorValue,
-        cardCount: cardCount ?? this.cardCount,
-        createdAt: createdAt,
-      );
-}
-
-class Flashcard {
-  final int id;
-  final int deckId;
-  final String front; // question
-  final String back; // answer
-  final String? hint;
-  final int reviewCount;
-  final int easeFactor; // 1 hard, 2 good, 3 easy
-  final bool mastered;
-
-  Flashcard({
-    required this.id,
-    required this.deckId,
-    required this.front,
-    required this.back,
-    this.hint,
-    this.reviewCount = 0,
-    this.easeFactor = 2,
-    this.mastered = false,
-  });
-
-  factory Flashcard.fromJson(Map<String, dynamic> j) => Flashcard(
-        id: firstIntValue(j, const ['id', 'card_id', 'cardId']),
-        deckId: firstIntValue(j, const ['book_id', 'deck_id', 'deckId']),
-        front: firstStringValue(j, const ['question', 'front', 'q']) ?? '',
-        back: firstStringValue(j, const ['answer', 'back', 'a']) ?? '',
-        hint: firstStringValue(j, const ['hint', 'h']),
-        reviewCount: firstIntValue(
-            j, const ['review_count', 'reviewCount', 'rc']),
-        easeFactor:
-            firstIntValue(j, const ['ease_factor', 'easeFactor', 'ef'],
-                fallback: 2),
-        mastered: boolValue(j['is_mastered']),
-      );
-}
-
 /// Challenges (Desky parity, built 2026-11-06).
 /// A challenge is a group study target over a date range — e.g.
 /// "wake up on time" (WAKEUP) or "study 4h a day" (STUDY).
@@ -1507,7 +1421,7 @@ class ChallengeDailyLog {
       );
 }
 
-/// A studicon tag from GET /studicon/list/tag (picf CDN):
+/// A studicon tag from GET /studicon/list/tag (main API):
 /// {id, tk, te}. `te` is the English name, `tk` the Korean one.
 class StudiconTag {
   final int id;
@@ -1522,8 +1436,8 @@ class StudiconTag {
 }
 
 /// A studicon (doll avatar) from the catalog endpoints
-/// (GET /studicon/list/famous, /studicon/list/new on the picf CDN,
-/// GET /studicon/list/wish on the main API). Spec shape:
+/// (GET /studicon/list/famous, /studicon/list/new, /studicon/list/wish
+/// on the main API). Spec shape:
 /// {id, tk, te, dk, de, p, tg: [{id, tk, te}], rf, n}.
 /// `te`/`de` are the English title/description, `tk`/`dk` Korean;
 /// `p` is the flame price; `tg` the tags. Desky's

@@ -247,6 +247,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     // async gap is what the linter flags, and the State's `mounted`
     // does not guard it.
     final api = context.read<AppState>().api;
+    final from = context.read<AppState>().user?.nickname ?? '';
     final messenger = ScaffoldMessenger.of(context);
     final send = await showDialog<bool>(
       context: context,
@@ -270,7 +271,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     );
     if (send != true || !mounted) return;
     try {
-      await api.shakeAllMembers(widget.group.id);
+      await api.shakeAllMembers(widget.group.id, from: from);
       if (!mounted) return;
       messenger.showSnackBar(
         const SnackBar(

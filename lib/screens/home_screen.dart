@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final items = <(IconData, IconData, String)>[
       (Icons.home_outlined, Icons.home, 'Home'),
       (Icons.check_circle_outline, Icons.check_circle, 'To-Do'),
-      (Icons.calendar_month_outlined, Icons.calendar_month, 'Calendar'),
+      (Icons.bar_chart_outlined, Icons.bar_chart, 'Statistics'),
       (Icons.groups_outlined, Icons.groups, 'Groups'),
     ];
     return Row(
@@ -328,13 +328,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (i == 2)
-                          _calendarIcon(_tab == i)
-                        else
-                          Icon(_tab == i ? items[i].$2 : items[i].$1,
-                              size: 21,
-                              color:
-                                  _tab == i ? Colors.white : Colors.grey[500]),
+                        Icon(_tab == i ? items[i].$2 : items[i].$1,
+                            size: 21,
+                            color:
+                                _tab == i ? Colors.white : Colors.grey[500]),
                         const SizedBox(height: 2),
                         Text(items[i].$3,
                             style: TextStyle(
@@ -379,24 +376,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Calendar glyph with today's date printed inside, like the
-  /// official app's bottom nav.
-  Widget _calendarIcon(bool selected) {
-    final color = selected ? Colors.white : Colors.grey[500];
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Icon(Icons.calendar_month_outlined, size: 21, color: color),
-        Positioned(
-          bottom: 0,
-          child: Text('${DateTime.now().day}',
-              style: TextStyle(
-                  fontSize: 8, fontWeight: FontWeight.w800, color: color)),
-        ),
-      ],
-    );
-  }
-
   void _showAbout(BuildContext context) {
     showDialog(
       context: context,
@@ -423,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             const Text(
-                '• Oct 24 — Break counter now starts from your last session.',
+                '• Oct 24 Break counter now starts from your last session.',
                 style: TextStyle(fontSize: 12.5, color: Colors.grey)),
           ],
         ),
