@@ -338,8 +338,8 @@ class _AvatarStorePageState extends State<AvatarStorePage>
     }
     return GridView.builder(
       padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 200,
         childAspectRatio: 0.72,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,

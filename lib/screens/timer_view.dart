@@ -657,7 +657,7 @@ class _TimerViewState extends State<TimerView> {
     return 'D+${-diff}';
   }
 
-  // ── Tab strip: Timer · Books · Statistics ────────────────────────
+  // ── Tab strip: Timer · Subjects · Statistics ────────────────────────
   Widget _tabStrip(BuildContext context) {
     Widget item(String label, bool activeTab, VoidCallback? onTap) {
       return Expanded(
@@ -697,7 +697,7 @@ class _TimerViewState extends State<TimerView> {
       child: Row(
         children: [
           item('Timer', true, null),
-          item('Books', false, () {
+          item('Subjects', false, () {
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SubjectsPage()),
             );
@@ -830,7 +830,7 @@ class _TimerViewState extends State<TimerView> {
                           children: [
                             _gridCategoryTitle('Extra features'),
                             _gridItem(
-                              Icons.menu_book_outlined, 'Books',
+                              Icons.subject, 'Subjects',
                               () {
                                 Navigator.pop(dlgCtx);
                                 Navigator.of(context).push(

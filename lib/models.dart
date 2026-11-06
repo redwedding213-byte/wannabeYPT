@@ -440,8 +440,14 @@ class Group {
 /// 그룹 멤버 (/logs/group/members/v2 의 ms 항목)
 /// Studicon doll CDN image, official YPT style:
 /// https://alicdn.tgclab.com/sc.v2/<id>/<pose>.png
+///
+/// Served through the app's own origin (Vercel rewrite /sc.v2/* ->
+/// alicdn) instead of alicdn directly: alicdn sends no CORS headers,
+/// so Flutter web (CanvasKit) cannot decode the images and every
+/// doll shows the placeholder. Same-origin = no CORS needed.
+/// See web/vercel.json.
 String studiconUrl(int studiconId, String poseFile) =>
-    'https://alicdn.tgclab.com/sc.v2/$studiconId/$poseFile';
+    '/sc.v2/$studiconId/$poseFile';
 
 /// Doll pose file for a study state, following the official app's
 /// time thresholds: under 1h normal, then sweat (1/2/3h), smoke
