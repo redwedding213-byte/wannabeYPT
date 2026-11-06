@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../main.dart' show kBrand, kCard, kCard2;
 import '../models.dart';
+import 'books_view.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
 import 'manual_log_dialog.dart';
@@ -655,7 +656,7 @@ class _TimerViewState extends State<TimerView> {
           item('Timer', true, null),
           item('Books', false, () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SubjectsPage()),
+              MaterialPageRoute(builder: (_) => const BooksPage()),
             );
           }),
           item('Statistics', false, () => TabBus.index.value = 2),
@@ -780,7 +781,7 @@ class _TimerViewState extends State<TimerView> {
                                 Navigator.pop(dlgCtx);
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const SubjectsPage(),
+                                    builder: (_) => const BooksPage(),
                                   ),
                                 );
                               },

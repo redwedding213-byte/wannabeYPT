@@ -396,6 +396,194 @@ class YptApi {
     }
   }
 
+  // ---- Flashcards / Books (Desky parity, built 2026-11-06) ----
+  // Endpoints + bodies mirror Desky's flashcard_repository.dart
+  // exactly: POST /card/book/list, /card/book/create, /card/book/delete,
+  // /card/list, /card/create, /card/delete, /card/review.
+  //
+  // THE 2026-10-29 FIX: the removed Books build required exactly
+  // HTTP 200 and swallowed the server's error message, so deck
+  // creation failed live with a generic "Couldn't create that deck".
+  // Desky's client accepts any status < 500 (its Dio validateStatus),
+  // so a 201 create succeeds there. Every method below therefore
+  // accepts ANY 2xx as transport success ([_ok2xx]) and, on a
+  // server rejection, throws/returns with the server's `m` message
+  // so the UI shows the real reason instead of a generic failure.
+  // Success still requires the body's `s == true`.
+  bool _ok2xx(http.Response r) =>
+      r.statusCode >= 200 && r.statusCode < 300;
+
+  /// The server's rejection message, when it sent one.
+  String? _serverMessage(Map<String, dynamic> j) {
+    final m = j['m']?.toString();
+    return (m == null || m.trim().isEmpty) ? null : m;
+  }
+
+  /// POST /card/book/list {language} → {s, list: [deck...]}.
+  /// Throws on transport or server failure so the caller can tell a
+  /// failed load apart from a genuinely empty shelf.
+  Future<List<FlashcardDeck>> fetchDecks() async {
+    final r = await _post('/card/book/list', {'language': 'en'});
+    if (!_ok2xx(r)) {
+      throw YptApiException('card/book/list HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load your decks.');
+    }
+    final list = j['list'] ?? j['books'] ?? j['data'];
+    if (list is! List) return [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(FlashcardDeck.fromJson)
+        .toList();
+  }
+
+  /// POST /card/book/create {name, color, description} → {s, book}.
+  /// color is the ARGB int. Throws [YptApiException] carrying the
+  /// server's `m` message when the server rejects the create.
+  Future<FlashcardDeck> createDeck({
+    required String title,
+    required int colorInt,
+    String? description,
+  }) async {
+    final r = await _post('/card/book/create', {
+      'name': title,
+      'color': colorInt,
+      'description': description ?? '',
+    });
+    if (!_ok2xx(r)) {
+      String? serverMsg;
+      try {
+        serverMsg = _serverMessage(_decodeObject(r));
+      } catch (_) {}
+      throw YptApiException(serverMsg ??
+          'Could not create that deck (HTTP ${r.statusCode}).');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not create that deck.');
+    }
+    final bookJson = j['book'] ?? j['data'];
+    if (bookJson is Map<String, dynamic>) {
+      return FlashcardDeck.fromJson(bookJson);
+    }
+    // The server confirmed but returned no book object — keep the
+    // deck visible with the values just sent.
+    return FlashcardDeck(
+      id: intValue(j['id']),
+      title: title,
+      description: description,
+      colorValue: colorInt,
+    );
+  }
+
+  /// POST /card/book/delete {id, book_id} → s == true.
+  Future<bool> deleteDeck(int deckId) async {
+    try {
+      final r = await _post(
+          '/card/book/delete', {'id': deckId, 'book_id': deckId});
+      if (!_ok2xx(r)) return false;
+      return _decodeObject(r)['s'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// POST /card/list {book_id} → {s, list: [card...]}.
+  Future<List<Flashcard>> fetchCards(int deckId) async {
+    final r = await _post('/card/list', {'book_id': deckId});
+    if (!_ok2xx(r)) {
+      throw YptApiException('card/list HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load the cards.');
+    }
+    final list = j['list'] ?? j['cards'] ?? j['data'];
+    if (list is! List) return [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(Flashcard.fromJson)
+        .toList();
+  }
+
+  /// POST /card/create {book_id, question, answer, hint} → {s, card}.
+  /// Throws [YptApiException] with the server's `m` on rejection.
+  Future<Flashcard> createCard({
+    required int deckId,
+    required String front,
+    required String back,
+    String? hint,
+  }) async {
+    final r = await _post('/card/create', {
+      'book_id': deckId,
+      'question': front,
+      'answer': back,
+      'hint': hint ?? '',
+    });
+    if (!_ok2xx(r)) {
+      String? serverMsg;
+      try {
+        serverMsg = _serverMessage(_decodeObject(r));
+      } catch (_) {}
+      throw YptApiException(serverMsg ??
+          'Could not add that card (HTTP ${r.statusCode}).');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not add that card.');
+    }
+    final cardJson = j['card'] ?? j['data'];
+    if (cardJson is Map<String, dynamic>) {
+      return Flashcard.fromJson(cardJson);
+    }
+    return Flashcard(
+      id: intValue(j['id']),
+      deckId: deckId,
+      front: front,
+      back: back,
+      hint: hint,
+    );
+  }
+
+  /// POST /card/delete {id, card_id} → s == true.
+  Future<bool> deleteCard(int cardId) async {
+    try {
+      final r =
+          await _post('/card/delete', {'id': cardId, 'card_id': cardId});
+      if (!_ok2xx(r)) return false;
+      return _decodeObject(r)['s'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// POST /card/review {id, card_id, ease_factor} → s == true.
+  /// ease_factor: 1 hard, 2 good, 3 easy. The server owns SM-2
+  /// scheduling; this only reports the rating. Never throws — a
+  /// failed review must not break the study session.
+  Future<bool> submitCardReview({
+    required int cardId,
+    required int easeFactor,
+  }) async {
+    try {
+      final r = await _post('/card/review', {
+        'id': cardId,
+        'card_id': cardId,
+        'ease_factor': easeFactor,
+      });
+      if (!_ok2xx(r)) return false;
+      return _decodeObject(r)['s'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// POST /study/add — a manual study record (retroactive session).
   /// Returns true on s == true, else throws with the server's message
   /// when present. End time is not sent; it is implied by stm + ms.
