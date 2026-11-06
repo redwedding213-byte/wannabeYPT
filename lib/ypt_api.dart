@@ -584,6 +584,174 @@ class YptApi {
     }
   }
 
+  // ---- Challenges (Desky parity, built 2026-11-06) ----
+  // Endpoints mirror Desky's challenge_repository.dart, with the
+  // response shapes corrected against the captured-traffic spec
+  // (docs/openapi.yaml): the list key is `rs` (Desky read
+  // `challenges`/`c` and would have parsed nothing), and items
+  // carry `t`/`d`/`ct`/`sd`/`ed`/`ds`/`c`/`e` (Desky's model read
+  // `name`/`description`/… and would have shown defaults). The
+  // model in models.dart accepts both shapes.
+  //
+  // Same transport rules as flashcards: any 2xx is success
+  // ([_ok2xx]); a server rejection throws with the server's `m`
+  // message so the UI shows the real reason. Success still
+  // requires the body's `s == true`.
+  //
+  // UNCERTAIN, flagged not guessed: /mission/challenge/my,
+  // /mission/challenge/join and /mission/challenge/cancel appear
+  // ONLY in Desky's repository code — none of the three is in the
+  // OpenAPI spec. The live test (list + join one challenge) is
+  // the real proof for those three. The two daily-logs endpoints
+  // ARE in the spec.
+
+  /// GET /mission/challenges → {s, rs: [challenge...]}.
+  /// Throws on transport or server failure so the caller can tell
+  /// a failed load apart from genuinely no challenges.
+  Future<List<StudyChallenge>> fetchChallenges() async {
+    final r = await _get('/mission/challenges');
+    if (!_ok2xx(r)) {
+      throw YptApiException('mission/challenges HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load challenges.');
+    }
+    final list = j['rs'] ?? j['challenges'] ?? j['c'] ?? j['list'];
+    if (list is! List) return [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(StudyChallenge.fromJson)
+        .toList();
+  }
+
+  /// GET /mission/challenge/my → {s, rs: [challenge...]}.
+  /// Desky-only endpoint (not in the spec). Never throws — if the
+  /// endpoint does not exist or fails, the caller falls back to
+  /// the joined items of [fetchChallenges].
+  Future<List<StudyChallenge>> fetchMyChallenges() async {
+    try {
+      final r = await _get('/mission/challenge/my');
+      if (!_ok2xx(r)) return [];
+      final j = _decodeObject(r);
+      if (j['s'] != true) return [];
+      final list = j['rs'] ?? j['challenges'] ?? j['c'] ?? j['list'];
+      if (list is! List) return [];
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map(StudyChallenge.fromJson)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// POST /mission/challenge/join {challengeID, flameBet} → s.
+  /// Desky-only endpoint (not in the spec). Throws
+  /// [YptApiException] carrying the server's `m` message when the
+  /// server rejects the join (e.g. not enough flames), so the UI
+  /// shows the real reason.
+  Future<bool> joinChallenge({
+    required int challengeId,
+    required int flameBet,
+  }) async {
+    final r = await _post('/mission/challenge/join', {
+      'challengeID': challengeId,
+      'flameBet': flameBet,
+    });
+    if (!_ok2xx(r)) {
+      String? serverMsg;
+      try {
+        serverMsg = _serverMessage(_decodeObject(r));
+      } catch (_) {}
+      throw YptApiException(serverMsg ??
+          'Could not join that challenge (HTTP ${r.statusCode}).');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not join that challenge.');
+    }
+    return true;
+  }
+
+  /// POST /mission/challenge/cancel {challengeID} → s == true.
+  /// Desky-only endpoint (not in the spec). Never throws.
+  Future<bool> cancelChallenge(int challengeId) async {
+    try {
+      final r = await _post(
+          '/mission/challenge/cancel', {'challengeID': challengeId});
+      if (!_ok2xx(r)) return false;
+      return _decodeObject(r)['s'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _isoUtc(DateTime d) => d
+      .toUtc()
+      .toIso8601String()
+      .replaceFirst(RegExp(r'\.\d+Z$'), '.000Z');
+
+  /// GET /mission/challenge/v2/daily-planner/logs — my daily
+  /// challenge logs in a date range. Query: start_date/end_date
+  /// (ISO UTC), timezone. Throws on transport or server failure.
+  Future<List<ChallengeDailyLog>> fetchChallengeDailyLogs({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final path = '/mission/challenge/v2/daily-planner/logs'
+        '?start_date=${Uri.encodeQueryComponent(_isoUtc(start))}'
+        '&end_date=${Uri.encodeQueryComponent(_isoUtc(end))}'
+        '&timezone=Asia%2FKolkata';
+    final r = await _get(path);
+    if (!_ok2xx(r)) {
+      throw YptApiException(
+          'challenge daily logs HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load challenge logs.');
+    }
+    final list = j['rs'] ?? j['list'] ?? j['data'];
+    if (list is! List) return [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(ChallengeDailyLog.fromJson)
+        .toList();
+  }
+
+  /// GET /mission/challenge/group/daily-logs — one group's daily
+  /// challenge logs for a single date. Query: date (YYYY-MM-DD),
+  /// timezone, group_id. Throws on transport or server failure.
+  Future<List<ChallengeDailyLog>> fetchGroupChallengeDailyLogs({
+    required int groupId,
+    required DateTime date,
+  }) async {
+    final d =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final path = '/mission/challenge/group/daily-logs'
+        '?date=$d&timezone=Asia%2FKolkata&group_id=$groupId';
+    final r = await _get(path);
+    if (!_ok2xx(r)) {
+      throw YptApiException(
+          'group challenge logs HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load group challenge logs.');
+    }
+    final list = j['rs'] ?? j['list'] ?? j['data'];
+    if (list is! List) return [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(ChallengeDailyLog.fromJson)
+        .toList();
+  }
+
   /// POST /study/add — a manual study record (retroactive session).
   /// Returns true on s == true, else throws with the server's message
   /// when present. End time is not sent; it is implied by stm + ms.

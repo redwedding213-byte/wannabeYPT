@@ -6,6 +6,7 @@ import '../app_state.dart';
 import '../main.dart' show kBrand, kCard, kCard2;
 import '../models.dart';
 import 'books_view.dart';
+import 'challenges_view.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
 import 'manual_log_dialog.dart';
@@ -761,6 +762,17 @@ class _TimerViewState extends State<TimerView> {
                               () {
                                 Navigator.pop(dlgCtx);
                                 _editGoal(context);
+                              },
+                            ),
+                            _gridItem(
+                              Icons.emoji_events_outlined, 'Challenges',
+                              () {
+                                Navigator.pop(dlgCtx);
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const ChallengesPage(),
+                                  ),
+                                );
                               },
                             ),
                           ],

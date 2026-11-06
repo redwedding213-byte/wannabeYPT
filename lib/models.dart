@@ -1245,3 +1245,245 @@ class Flashcard {
         mastered: boolValue(j['is_mastered']),
       );
 }
+
+/// Challenges (Desky parity, built 2026-11-06).
+/// A challenge is a group study target over a date range — e.g.
+/// "wake up on time" (WAKEUP) or "study 4h a day" (STUDY).
+///
+/// TWO shapes exist and the parser accepts both, because Desky's
+/// model and the captured-traffic spec disagree:
+///  - Spec shape (docs/openapi.yaml, GET /mission/challenges):
+///    {id, t (title), d (description), ct (type), p (points/price),
+///    tp, trt (day-index -> 0/1 results), gid, r (rules, a list),
+///    ds (challenge dates), sd/ed (start/end), c (ARGB colour),
+///    e (emoji)}; the list lives under `rs`.
+///  - Desky shape (challenge_model.dart): {id, name/n, description,
+///    rules/r, flame_cost/flameCost/fc, checkin_method/method,
+///    start_at, end_at, checkin_count/cc, threshold,
+///    participants_count/pc, status, is_joined/joined}; the list
+///    lives under `challenges` or `c`.
+/// Desky's own parser would miss the spec shape entirely (it reads
+/// `name` not `t`, and `challenges` not `rs`), so this one reads the
+/// spec keys first and falls back to Desky's.
+class StudyChallenge {
+  final int id;
+  final String name;
+  final String description;
+  final String type; // e.g. WAKEUP, STUDY
+  final String rules;
+  final int flameCost; // bet to join; 0 = free
+  final String checkInMethod; // e.g. timer
+  final DateTime startDate;
+  final DateTime endDate;
+  final List<DateTime> dates; // ds — the challenge days
+  final int checkInCount;
+  final double successThreshold;
+  final int participantCount;
+  final String status;
+  final bool isJoined;
+  final int colorValue; // c — ARGB int, 0 = none
+  final String? emoji;
+  final int groupId;
+  /// trt — per-day results keyed by day index ('1'..'n').
+  /// Meaning unverified from captured traffic: treated as
+  /// 1 = day done, 0 = not done, only for progress math.
+  final Map<String, int> dayResults;
+
+  StudyChallenge({
+    required this.id,
+    required this.name,
+    required this.description,
+    this.type = '',
+    this.rules = '',
+    this.flameCost = 0,
+    this.checkInMethod = 'timer',
+    required this.startDate,
+    required this.endDate,
+    this.dates = const [],
+    this.checkInCount = 0,
+    this.successThreshold = 0.8,
+    this.participantCount = 1,
+    this.status = 'active',
+    this.isJoined = false,
+    this.colorValue = 0,
+    this.emoji,
+    this.groupId = 0,
+    this.dayResults = const {},
+  });
+
+  static DateTime? _parseDate(Object? v) {
+    if (v == null) return null;
+    if (v is num) {
+      final ms = v.toInt();
+      // Seconds vs milliseconds: YPT sends both across endpoints.
+      return DateTime.fromMillisecondsSinceEpoch(
+          ms < 10000000000 ? ms * 1000 : ms);
+    }
+    return DateTime.tryParse(v.toString());
+  }
+
+  factory StudyChallenge.fromJson(Map<String, dynamic> j) {
+    final start = _parseDate(j['sd']) ??
+        _parseDate(j['start_at']) ??
+        _parseDate(j['startAt']);
+    final end = _parseDate(j['ed']) ??
+        _parseDate(j['end_at']) ??
+        _parseDate(j['endAt']);
+    final dates = <DateTime>[];
+    final rawDates = j['ds'];
+    if (rawDates is List) {
+      for (final d in rawDates) {
+        final parsed = _parseDate(d);
+        if (parsed != null) dates.add(parsed);
+      }
+    }
+    final dayResults = <String, int>{};
+    final rawTrt = j['trt'];
+    if (rawTrt is Map) {
+      rawTrt.forEach((k, v) {
+        dayResults[k.toString()] = intValue(v);
+      });
+    }
+    // Rules arrive as a string in Desky's shape and as a list in
+    // the spec shape; a list joins to lines, an empty list is ''.
+    var rules = firstStringValue(j, const ['rules']) ?? '';
+    if (rules.isEmpty && j['r'] is List) {
+      rules = (j['r'] as List).map((e) => e.toString()).join('\n');
+    }
+    return StudyChallenge(
+      id: firstIntValue(j, const ['id', 'challenge_id', 'challengeId']),
+      name: firstStringValue(j, const ['t', 'name', 'n', 'title']) ??
+          'Challenge',
+      description:
+          firstStringValue(j, const ['d', 'description', 'desc']) ?? '',
+      type: firstStringValue(j, const ['ct', 'type']) ?? '',
+      rules: rules,
+      flameCost: firstIntValue(
+          j, const ['p', 'flame_cost', 'flameCost', 'fc']),
+      checkInMethod:
+          firstStringValue(j, const ['checkin_method', 'method']) ??
+              'timer',
+      startDate: start ?? (dates.isNotEmpty ? dates.first : DateTime.now()),
+      endDate: end ??
+          (dates.isNotEmpty
+              ? dates.last
+              : DateTime.now().add(const Duration(days: 7))),
+      dates: dates,
+      checkInCount: firstIntValue(
+          j, const ['checkin_count', 'checkinCount', 'cc']),
+      successThreshold: (j['threshold'] as num?)?.toDouble() ?? 0.8,
+      participantCount: firstIntValue(
+          j, const ['participants_count', 'participantsCount', 'pc'],
+          fallback: 1),
+      status: firstStringValue(j, const ['status']) ?? 'active',
+      isJoined: boolValue(j['is_joined'] ?? j['joined']),
+      colorValue: firstIntValue(j, const ['c', 'color']),
+      emoji: firstStringValue(j, const ['e', 'emoji']),
+      groupId: firstIntValue(j, const ['gid', 'group_id', 'groupId']),
+      dayResults: dayResults,
+    );
+  }
+
+  Color get color => Color(colorValue == 0 ? 0xFFE8552D : colorValue);
+
+  /// Progress 0..1. Prefers the server's own day results over the
+  /// challenge days; falls back to Desky's check-in count over 7.
+  double get progress {
+    if (dates.isNotEmpty && dayResults.isNotEmpty) {
+      final done = dayResults.values.where((v) => v > 0).length;
+      return (done / dates.length).clamp(0.0, 1.0);
+    }
+    if (checkInCount > 0) {
+      return (checkInCount / 7.0).clamp(0.0, 1.0);
+    }
+    return 0.0;
+  }
+
+  StudyChallenge copyWith({bool? isJoined}) => StudyChallenge(
+        id: id,
+        name: name,
+        description: description,
+        type: type,
+        rules: rules,
+        flameCost: flameCost,
+        checkInMethod: checkInMethod,
+        startDate: startDate,
+        endDate: endDate,
+        dates: dates,
+        checkInCount: checkInCount,
+        successThreshold: successThreshold,
+        participantCount: participantCount,
+        status: status,
+        isJoined: isJoined ?? this.isJoined,
+        colorValue: colorValue,
+        emoji: emoji,
+        groupId: groupId,
+        dayResults: dayResults,
+      );
+}
+
+/// One daily log row from the challenge log endpoints
+/// (GET /mission/challenge/v2/daily-planner/logs and
+/// GET /mission/challenge/group/daily-logs). Shape from the spec
+/// examples: {id, ud, sd, ed, la, sm, gid, cuid, cid, st, guid,
+/// h, t (title), cd (description), ct (type), is, gt (group
+/// title), csd, ced}. The `ud` vs `cuid` split is unverified —
+/// both are kept; `h` is kept raw and never shown as hours.
+class ChallengeDailyLog {
+  final int id;
+  final int userId; // ud
+  final int cuid;
+  final DateTime? startAt; // sd
+  final DateTime? endAt; // ed
+  final int groupId; // gid
+  final int challengeId; // cid
+  final int status; // st
+  final int h; // raw, meaning unverified
+  final String title; // t
+  final String description; // cd
+  final String type; // ct
+  final String groupTitle; // gt
+  final DateTime? challengeStart; // csd
+  final DateTime? challengeEnd; // ced
+
+  ChallengeDailyLog({
+    required this.id,
+    this.userId = 0,
+    this.cuid = 0,
+    this.startAt,
+    this.endAt,
+    this.groupId = 0,
+    this.challengeId = 0,
+    this.status = 0,
+    this.h = 0,
+    this.title = '',
+    this.description = '',
+    this.type = '',
+    this.groupTitle = '',
+    this.challengeStart,
+    this.challengeEnd,
+  });
+
+  factory ChallengeDailyLog.fromJson(Map<String, dynamic> j) =>
+      ChallengeDailyLog(
+        id: firstIntValue(j, const ['id', 'log_id', 'logId']),
+        userId: firstIntValue(j, const ['ud', 'user_id', 'userId']),
+        cuid: firstIntValue(j, const ['cuid']),
+        startAt: StudyChallenge._parseDate(j['sd'] ?? j['start_at']),
+        endAt: StudyChallenge._parseDate(j['ed'] ?? j['end_at']),
+        groupId: firstIntValue(j, const ['gid', 'group_id', 'groupId']),
+        challengeId:
+            firstIntValue(j, const ['cid', 'challenge_id', 'challengeId']),
+        status: firstIntValue(j, const ['st', 'status']),
+        h: firstIntValue(j, const ['h']),
+        title: firstStringValue(j, const ['t', 'title', 'name']) ?? '',
+        description:
+            firstStringValue(j, const ['cd', 'description', 'd']) ?? '',
+        type: firstStringValue(j, const ['ct', 'type']) ?? '',
+        groupTitle:
+            firstStringValue(j, const ['gt', 'group_title', 'groupTitle']) ??
+                '',
+        challengeStart: StudyChallenge._parseDate(j['csd']),
+        challengeEnd: StudyChallenge._parseDate(j['ced']),
+      );
+}
