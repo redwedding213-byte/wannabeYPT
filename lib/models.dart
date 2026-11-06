@@ -311,6 +311,7 @@ class UserData {
   final int categoryId; // ci
   final int countryId; // coid
   final List<YptTask> tasks; // tks
+  final int studiconId; // p.si/csd/ssd — equipped studicon, -1 = default doll
 
   UserData({
     this.jwt,
@@ -323,6 +324,7 @@ class UserData {
     this.categoryId = 0,
     this.countryId = 0,
     this.tasks = const [],
+    this.studiconId = -1,
   });
 
   factory UserData.fromJson(Map<String, dynamic> j) {
@@ -358,8 +360,25 @@ class UserData {
       categoryId: intValue(j['ci']),
       countryId: intValue(j['coid']),
       tasks: tasks,
+      studiconId: _equippedStudiconId(j['p']),
     );
   }
+}
+
+/// Equipped studicon id from a profile payload's `p` object
+/// (POST /user/v2/reload/info, sign-in). The spec's captured
+/// reload/info example carries `si: null, csd: -1, ssd: -1`
+/// (-1 = default doll). Desky's UserModel reads the same keys
+/// (plus `sd`, which this codebase deliberately does NOT read:
+/// `sd` is study-ms in several other payloads, so trusting it
+/// here could mistake hours for a studicon id).
+int _equippedStudiconId(Object? p) {
+  if (p is! Map<String, dynamic>) return -1;
+  for (final k in const ['si', 'csd', 'ssd', 'studiconId']) {
+    final v = intValue(p[k]);
+    if (v > 0) return v;
+  }
+  return -1;
 }
 
 /// 카테고리 랭킹 멤버 (/logs/category/member/ranks 의 ms 항목)
@@ -1485,5 +1504,82 @@ class ChallengeDailyLog {
                 '',
         challengeStart: StudyChallenge._parseDate(j['csd']),
         challengeEnd: StudyChallenge._parseDate(j['ced']),
+      );
+}
+
+/// A studicon tag from GET /studicon/list/tag (picf CDN):
+/// {id, tk, te}. `te` is the English name, `tk` the Korean one.
+class StudiconTag {
+  final int id;
+  final String name;
+
+  const StudiconTag({required this.id, required this.name});
+
+  factory StudiconTag.fromJson(Map<String, dynamic> j) => StudiconTag(
+        id: firstIntValue(j, const ['id', 'tag_id', 'tagId']),
+        name: firstStringValue(j, const ['te', 'tk', 'name']) ?? 'Tag',
+      );
+}
+
+/// A studicon (doll avatar) from the catalog endpoints
+/// (GET /studicon/list/famous, /studicon/list/new on the picf CDN,
+/// GET /studicon/list/wish on the main API). Spec shape:
+/// {id, tk, te, dk, de, p, tg: [{id, tk, te}], rf, n}.
+/// `te`/`de` are the English title/description, `tk`/`dk` Korean;
+/// `p` is the flame price; `tg` the tags. Desky's
+/// StudiconItemModel reads the same keys (price falls back to 200).
+class StudiconItem {
+  final int id;
+  final String name;
+  final String? description;
+  final int priceFlames;
+  final List<StudiconTag> tags;
+  final bool isOwned;
+  final bool isEquipped;
+
+  const StudiconItem({
+    required this.id,
+    required this.name,
+    this.description,
+    this.priceFlames = 200,
+    this.tags = const [],
+    this.isOwned = false,
+    this.isEquipped = false,
+  });
+
+  /// Doll preview from the official avatar CDN.
+  /// id -1 is the default orange doll (sc.v2/-1/normal1.png).
+  String get previewUrl => studiconUrl(id, 'normal1.png');
+
+  factory StudiconItem.fromJson(Map<String, dynamic> j) {
+    final rawTags = j['tg'];
+    final tags = <StudiconTag>[];
+    if (rawTags is List) {
+      for (final t in rawTags) {
+        if (t is Map<String, dynamic>) tags.add(StudiconTag.fromJson(t));
+      }
+    }
+    return StudiconItem(
+      id: firstIntValue(j, const ['id', 'studiconID', 'studiconId', 'sc']),
+      name: firstStringValue(j, const ['te', 'tk', 'name']) ?? 'Avatar',
+      description:
+          firstStringValue(j, const ['de', 'dk', 'description']),
+      priceFlames: firstIntValue(
+          j, const ['p', 'fc', 'flame_cost', 'flameCost', 'price'],
+          fallback: 200),
+      tags: tags,
+      isOwned: boolValue(j['isOwned'], fallback: true),
+      isEquipped: boolValue(j['isEquipped']),
+    );
+  }
+
+  StudiconItem copyWith({bool? isOwned, bool? isEquipped}) => StudiconItem(
+        id: id,
+        name: name,
+        description: description,
+        priceFlames: priceFlames,
+        tags: tags,
+        isOwned: isOwned ?? this.isOwned,
+        isEquipped: isEquipped ?? this.isEquipped,
       );
 }

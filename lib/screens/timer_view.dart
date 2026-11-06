@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../main.dart' show kBrand, kCard, kCard2;
 import '../models.dart';
+import 'avatar_store_view.dart';
 import 'books_view.dart';
 import 'challenges_view.dart';
 import 'home_screen.dart' show TabBus;
@@ -836,6 +837,17 @@ class _TimerViewState extends State<TimerView> {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => const BooksPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _gridItem(
+                              Icons.face_outlined, 'Avatar Store',
+                              () {
+                                Navigator.pop(dlgCtx);
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const AvatarStorePage(),
                                   ),
                                 );
                               },

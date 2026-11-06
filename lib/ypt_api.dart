@@ -752,6 +752,203 @@ class YptApi {
         .toList();
   }
 
+  // ── Studicons / Avatar Store ────────────────────────────────────
+  // Endpoints mirror Desky's store_repository.dart:
+  //   GET  /studicon/list/famous, /studicon/list/new, /studicon/list/tag
+  //   GET  /studicon/list/wish, /studicon/my/list
+  //   POST /user/studicon (equip)
+  //
+  // TWO BASES, and the split matters on the web:
+  // - The catalog lists (famous/new/tag) live on the metadata CDN
+  //   https://picf.tgclab.com, and CloudFront there 403s EVERY
+  //   OPTIONS request — so any Authorization or
+  //   Content-Type: application/json header would make the browser
+  //   preflight and block the call. The catalog is public (a
+  //   header-less GET returns {s: true, scs: [...]}), so these calls
+  //   go out with NO custom headers ([_getPublic]) — a CORS-simple
+  //   request the CDN answers with the Origin echoed back.
+  // - my/list, wish and equip live on the main API (pi.tgclab.com),
+  //   whose preflight works, so they use the normal authed [_get]/[_post].
+  // All reads use [_ok2xx] (any 2xx) and surface the server's `m`,
+  // same as flashcards/challenges. Equip throws on failure (Desky
+  // swallows equip errors and returns true — this code does not).
+  static const String _studiconCdn = 'https://picf.tgclab.com';
+
+  /// GET against an absolute URL with NO custom headers. Only for
+  /// the public picf CDN — see the section note above.
+  Future<http.Response> _getPublic(String url) =>
+      _client.get(Uri.parse(url)).timeout(requestTimeout);
+
+  /// One catalog page from the picf CDN.
+  /// Returns (items, hasMore). `hm` is the server's "has more pages".
+  Future<(List<StudiconItem>, bool)> _fetchStudiconPage(
+      String kind, int page) async {
+    final r = await _getPublic(
+        '$_studiconCdn/studicon/list/$kind?p=$page&lang=en');
+    if (!_ok2xx(r)) {
+      throw YptApiException('studicon/list/$kind HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load avatars.');
+    }
+    final scs = j['scs'];
+    final items = scs is List
+        ? scs
+            .whereType<Map<String, dynamic>>()
+            .map(StudiconItem.fromJson)
+            .toList()
+        : <StudiconItem>[];
+    return (items, j['hm'] == true);
+  }
+
+  /// Paginated catalog fetch, Desky's shape: up to 6 pages, stop
+  /// early when the server says there are no more pages or a page
+  /// comes back empty.
+  Future<List<StudiconItem>> _fetchStudiconList(String kind) async {
+    final out = <StudiconItem>[];
+    for (var p = 1; p <= 6; p++) {
+      final (items, hasMore) = await _fetchStudiconPage(kind, p);
+      if (items.isEmpty) break;
+      out.addAll(items);
+      if (!hasMore) break;
+    }
+    return out;
+  }
+
+  /// Famous studicons (picf CDN), paginated. See [_fetchStudiconList].
+  Future<List<StudiconItem>> fetchFamousStudicons() =>
+      _fetchStudiconList('famous');
+
+  /// New studicons (picf CDN), paginated.
+  Future<List<StudiconItem>> fetchNewStudicons() =>
+      _fetchStudiconList('new');
+
+  /// Famous + new catalogs merged by id (a studicon can appear in
+  /// both lists). The two lists load concurrently.
+  Future<List<StudiconItem>> fetchStudiconCatalog() async {
+    final results = await Future.wait([
+      fetchFamousStudicons(),
+      fetchNewStudicons(),
+    ]);
+    final byId = <int, StudiconItem>{};
+    for (final list in results) {
+      for (final item in list) {
+        byId.putIfAbsent(item.id, () => item);
+      }
+    }
+    return byId.values.toList();
+  }
+
+  /// GET /studicon/list/tag (picf CDN) → {s, ts: [{id, tk, te}]}.
+  /// This returns the TAG list, not studicons: there is no
+  /// "list items by tag id" endpoint in the spec or in Desky, so
+  /// the store filters the catalog client-side by item tags.
+  Future<List<StudiconTag>> fetchStudiconTags() async {
+    final r = await _getPublic('$_studiconCdn/studicon/list/tag?lang=en');
+    if (!_ok2xx(r)) {
+      throw YptApiException('studicon/list/tag HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load avatar tags.');
+    }
+    final ts = j['ts'];
+    if (ts is! List) return [];
+    return ts
+        .whereType<Map<String, dynamic>>()
+        .map(StudiconTag.fromJson)
+        .toList();
+  }
+
+  /// GET /studicon/my/list (main API) → {s, my: [...], p, w, va}.
+  /// `my` is the owned studicon ids — ints, or {id} objects
+  /// (Desky accepts both). Throws so the store can tell a failed
+  /// load apart from "owns nothing".
+  Future<Set<int>> fetchMyStudiconIds() async {
+    final r = await _get('/studicon/my/list?lang=en');
+    if (!_ok2xx(r)) {
+      throw YptApiException('studicon/my/list HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not load your avatars.');
+    }
+    final ids = <int>{};
+    final my = j['my'];
+    if (my is List) {
+      for (final e in my) {
+        if (e is int && e > 0) {
+          ids.add(e);
+        } else if (e is Map<String, dynamic>) {
+          final id = firstIntValue(
+              e, const ['id', 'sc', 'sd', 'studiconId', 'studiconID']);
+          if (id > 0) ids.add(id);
+        }
+      }
+    }
+    return ids;
+  }
+
+  /// GET /studicon/list/wish (main API) → {s, scs: [...], hm}.
+  /// The user's wishlisted studicons, paginated like the catalog.
+  Future<List<StudiconItem>> fetchWishlistStudicons() async {
+    final out = <StudiconItem>[];
+    for (var p = 1; p <= 6; p++) {
+      final r =
+          await _get('/studicon/list/wish?p=$p&lang=en');
+      if (!_ok2xx(r)) {
+        throw YptApiException('studicon/list/wish HTTP ${r.statusCode}');
+      }
+      final j = _decodeObject(r);
+      if (j['s'] != true) {
+        throw YptApiException(
+            _serverMessage(j) ?? 'Could not load your wishlist.');
+      }
+      final scs = j['scs'];
+      final items = scs is List
+          ? scs
+              .whereType<Map<String, dynamic>>()
+              .map(StudiconItem.fromJson)
+              .toList()
+          : <StudiconItem>[];
+      if (items.isEmpty) break;
+      out.addAll(items);
+      if (j['hm'] != true) break;
+    }
+    return out;
+  }
+
+  /// POST /user/studicon {sd, studiconId} → {s}.
+  /// UNCERTAIN, flagged not guessed: this endpoint is NOT in the
+  /// OpenAPI spec at all — it is confirmed only by Desky's
+  /// store_repository.dart (which sends both `sd` and `studiconId`
+  /// and swallows all errors). The live test (equip one studicon,
+  /// confirm it shows) is the real proof. Throws with the server's
+  /// `m` message on rejection so the UI shows the real reason.
+  Future<void> equipStudicon(int studiconId) async {
+    final r = await _post('/user/studicon', {
+      'sd': studiconId,
+      'studiconId': studiconId,
+    });
+    if (!_ok2xx(r)) {
+      String? serverMsg;
+      try {
+        serverMsg = _serverMessage(_decodeObject(r));
+      } catch (_) {}
+      throw YptApiException(serverMsg ??
+          'Could not equip that avatar (HTTP ${r.statusCode}).');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] != true) {
+      throw YptApiException(
+          _serverMessage(j) ?? 'Could not equip that avatar.');
+    }
+  }
+
   /// POST /study/add — a manual study record (retroactive session).
   /// Returns true on s == true, else throws with the server's message
   /// when present. End time is not sent; it is implied by stm + ms.
