@@ -239,6 +239,52 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     });
   }
 
+  /// Shake-all nudges every member, so it always asks first.
+  /// Success and failure both show the server's real answer — a
+  /// rejection surfaces its `m` message instead of a generic error.
+  Future<void> _confirmShakeAll(BuildContext context) async {
+    // Capture these before the awaits: using `context` across an
+    // async gap is what the linter flags, and the State's `mounted`
+    // does not guard it.
+    final api = context.read<AppState>().api;
+    final messenger = ScaffoldMessenger.of(context);
+    final send = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        backgroundColor: kCard,
+        title: const Text('Shake all members?'),
+        content: const Text(
+            'Everyone in this group gets a nudge to get back to studying.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(d).pop(false),
+            child:
+                Text('Cancel', style: TextStyle(color: Colors.grey[400])),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(d).pop(true),
+            child: const Text('Shake all', style: TextStyle(color: kBrand)),
+          ),
+        ],
+      ),
+    );
+    if (send != true || !mounted) return;
+    try {
+      await api.shakeAllMembers(widget.group.id);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('Shake sent to everyone!'),
+            backgroundColor: kBrand),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   void _showInfo() {
     final g = widget.group;
     showDialog(
@@ -335,6 +381,11 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
+            tooltip: 'Shake all members',
+            icon: const Icon(Icons.notifications_active_outlined),
+            onPressed: () => _confirmShakeAll(context),
+          ),
+          IconButton(
             tooltip: 'Group info',
             icon: const Icon(Icons.settings_outlined),
             onPressed: _showInfo,
@@ -385,6 +436,11 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           tooltip: 'Switch subject',
           icon: const Icon(Icons.swap_horiz, size: 21),
           onPressed: () => _pickSubject(st),
+        ),
+        IconButton(
+          tooltip: 'Shake all members',
+          icon: const Icon(Icons.notifications_active_outlined, size: 21),
+          onPressed: () => _confirmShakeAll(context),
         ),
         IconButton(
           tooltip: 'View mode',

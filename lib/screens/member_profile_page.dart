@@ -93,6 +93,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
   final Map<String, DayDetail> _days = {};
   bool _monthLoading = false;
   DateTime _selected = DateTime.now();
+  bool _shaking = false;
 
   GroupMember get m => widget.member;
 
@@ -115,6 +116,55 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
   void dispose() {
     _ticker?.cancel();
     super.dispose();
+  }
+
+  /// A shake is a nudge to another person, so it always asks first.
+  /// Success and failure both show the server's real answer — a
+  /// rejection surfaces its `m` message instead of a generic error.
+  Future<void> _confirmShake(BuildContext context) async {
+    // Capture these before the awaits: using `context` across an
+    // async gap is what the linter flags, and the State's `mounted`
+    // does not guard it.
+    final api = context.read<AppState>().api;
+    final messenger = ScaffoldMessenger.of(context);
+    final send = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        backgroundColor: kCard,
+        title: Text('Shake ${m.nickname}?'),
+        content: const Text(
+            'They will get a nudge to get back to studying.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(d).pop(false),
+            child:
+                Text('Cancel', style: TextStyle(color: Colors.grey[400])),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(d).pop(true),
+            child: const Text('Shake', style: TextStyle(color: kBrand)),
+          ),
+        ],
+      ),
+    );
+    if (send != true || !mounted) return;
+    setState(() => _shaking = true);
+    try {
+      await api.shakeMember(groupId: widget.groupId, targetUserId: m.userId);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+            content: Text('Shake sent to ${m.nickname}!'),
+            backgroundColor: kBrand),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _shaking = false);
+    }
   }
 
   bool _isMember(GroupMember r) =>
@@ -266,6 +316,25 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                   ],
                 ),
                 const SizedBox(height: 26),
+                if (!widget.isMe) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          _shaking ? null : () => _confirmShake(context),
+                      icon: const Icon(Icons.notifications_active_outlined,
+                          size: 17),
+                      label: Text(_shaking ? 'Sending…' : 'Shake ${m.nickname}'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kBrand,
+                        side:
+                            BorderSide(color: kBrand.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 26),
+                ],
                 if (widget.isMe) ..._selfSections() else ..._otherSections(),
               ],
             ),

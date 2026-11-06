@@ -1133,6 +1133,45 @@ class YptApi {
     return ms.whereType<Map<String, dynamic>>().toList();
   }
 
+  /// POST /group/push/shake — nudge one group member.
+  /// Desky sends {groupID, targetUserID}; the spec's captured-traffic
+  /// example sends {user_id, group_id, from}. Both key styles are
+  /// sent — the server ignores unknown fields. Accepts any 2xx
+  /// ([_ok2xx]) and throws [YptApiException] with the server's `m`
+  /// message on rejection, so the UI shows the real reason.
+  Future<bool> shakeMember(
+      {required int groupId, required int targetUserId}) async {
+    final r = await _post('/group/push/shake', {
+      'groupID': groupId,
+      'targetUserID': targetUserId,
+      'group_id': groupId,
+      'user_id': targetUserId,
+    });
+    if (!_ok2xx(r)) {
+      throw YptApiException('group/push/shake HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] == true) return true;
+    throw YptApiException(
+        _serverMessage(j) ?? j['c']?.toString() ?? 'Could not send shake.');
+  }
+
+  /// POST /group/push/shake/all — nudge every member of the group.
+  /// Same 2xx + `m` handling as [shakeMember].
+  Future<bool> shakeAllMembers(int groupId) async {
+    final r = await _post('/group/push/shake/all', {
+      'groupID': groupId,
+      'group_id': groupId,
+    });
+    if (!_ok2xx(r)) {
+      throw YptApiException('group/push/shake/all HTTP ${r.statusCode}');
+    }
+    final j = _decodeObject(r);
+    if (j['s'] == true) return true;
+    throw YptApiException(
+        _serverMessage(j) ?? j['c']?.toString() ?? 'Could not send shake.');
+  }
+
   /// POST /study/start — 타이머 시작. 응답에 dayLog 포함.
   Future<DayLog?> studyStart(String subject, {int? taskId}) async {
     final r = await _post('/study/start',
