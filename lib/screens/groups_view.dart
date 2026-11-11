@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, kCard;
+import '../main.dart' show kBrand, yptCardColor;
 import 'group_room_screen.dart';
 
 class GroupsView extends StatefulWidget {
@@ -189,7 +189,7 @@ class _GroupSearchPageState extends State<GroupSearchPage> {
                 prefixIcon:
                     Icon(Icons.search, size: 20, color: Colors.grey[500]),
                 filled: true,
-                fillColor: kCard,
+                fillColor: yptCardColor(context),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,

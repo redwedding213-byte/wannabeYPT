@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, kCard, kCard2;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color;
 import '../models.dart';
 import 'avatar_store_view.dart';
 import 'challenges_view.dart';
@@ -113,7 +113,7 @@ class _TimerViewState extends State<TimerView> {
           width: 170,
           height: 3,
           decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.10),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(2)),
           child: Align(
             alignment: Alignment.centerLeft,
@@ -316,7 +316,7 @@ class _TimerViewState extends State<TimerView> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                 decoration: BoxDecoration(
-                    color: kCard2, borderRadius: BorderRadius.circular(16)),
+                    color: yptCard2Color(context), borderRadius: BorderRadius.circular(16)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -404,7 +404,7 @@ class _TimerViewState extends State<TimerView> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                                color: kCard2,
+                                color: yptCard2Color(context),
                                 borderRadius: BorderRadius.circular(8)),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -450,7 +450,7 @@ class _TimerViewState extends State<TimerView> {
     final current = st.serverTaskScore(t);
     final picked = await showMenu<int>(
       context: iconCtx,
-      color: kCard,
+      color: yptCardColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       position: RelativeRect.fromLTRB(
           pos.dx, pos.dy + box.size.height, pos.dx + box.size.width, pos.dy),
@@ -601,7 +601,7 @@ class _TimerViewState extends State<TimerView> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                    color: kCard2, borderRadius: BorderRadius.circular(8)),
+                    color: yptCard2Color(context), borderRadius: BorderRadius.circular(8)),
                 child: Text(_ddayLabel(st),
                     style: const TextStyle(
                         fontSize: 12.5, fontWeight: FontWeight.w700)),
@@ -670,7 +670,7 @@ class _TimerViewState extends State<TimerView> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 14,
-                      color: activeTab ? Colors.white : Colors.grey[500],
+                      color: activeTab ? Theme.of(context).colorScheme.onSurface : Colors.grey[500],
                       fontWeight:
                           activeTab ? FontWeight.w600 : FontWeight.w400)),
               const SizedBox(height: 7),
@@ -678,7 +678,7 @@ class _TimerViewState extends State<TimerView> {
                 height: 2,
                 width: 28,
                 decoration: BoxDecoration(
-                  color: activeTab ? Colors.white : Colors.transparent,
+                  color: activeTab ? Theme.of(context).colorScheme.onSurface : Colors.transparent,
                   borderRadius: BorderRadius.circular(1),
                 ),
               ),
@@ -726,7 +726,7 @@ class _TimerViewState extends State<TimerView> {
                 color: const Color(0xF21C1C24),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.14),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.14),
                   width: 1,
                 ),
                 boxShadow: [
@@ -945,7 +945,7 @@ class _TimerViewState extends State<TimerView> {
                 label,
                 style: TextStyle(
                   fontSize: 12.5,
-                  color: color ?? Colors.white,
+                  color: color ?? Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w400,
                 ),
                 maxLines: 1,
@@ -978,7 +978,7 @@ class _TimerViewState extends State<TimerView> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: const Text('wannabeYPT Help', style: TextStyle(fontSize: 16)),
         content: const Text(
           'wannabeYPT is an unofficial YPT client tailored for laptop/PC study.\n\n'
@@ -1037,7 +1037,7 @@ class _TimerViewState extends State<TimerView> {
     final action = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: const Text('D-Day', style: TextStyle(fontSize: 16)),
         content: const Text(
             'A countdown chip for your target date (exam day, for example). Stored on this device only.',
@@ -1082,7 +1082,7 @@ class _TimerViewState extends State<TimerView> {
     final result = await showDialog<int>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: const Text('Daily goal', style: TextStyle(fontSize: 16)),
         content: Row(
           children: [
@@ -1173,7 +1173,7 @@ class _SubjectRow extends StatelessWidget {
                     BoxDecoration(color: s.color, shape: BoxShape.circle),
                 child: Icon(
                     active ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     size: compact ? 15 : 17),
               ),
               const SizedBox(width: 13),
@@ -1267,12 +1267,12 @@ class _PomoPanel extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: kCard,
+        color: yptCardColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
             color: st.pomoPhase != 'idle'
                 ? kBrand.withValues(alpha: 0.4)
-                : Colors.white10),
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
@@ -1291,7 +1291,7 @@ class _PomoPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          _phaseArea(st),
+          _phaseArea(context, st),
           const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1316,7 +1316,7 @@ class _PomoPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _cycleDots(st),
+          _cycleDots(context, st),
           if (st.notifyPerm == 'default' || st.notifyPerm == 'unknown')
             TextButton.icon(
               onPressed: () => context.read<AppState>().enableNotifications(),
@@ -1335,7 +1335,7 @@ class _PomoPanel extends StatelessWidget {
     );
   }
 
-  Widget _phaseArea(AppState st) {
+  Widget _phaseArea(BuildContext context, AppState st) {
     if (st.pomoPhase == 'focus') {
       if (st.pomoOvertime) {
         // Overtime: the focus clock hit zero — count up, study timer
@@ -1357,11 +1357,11 @@ class _PomoPanel extends StatelessWidget {
             const SizedBox(height: 5),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: const LinearProgressIndicator(
+              child: LinearProgressIndicator(
                 value: 1.0,
                 minHeight: 5,
-                backgroundColor: Colors.white10,
-                valueColor: AlwaysStoppedAnimation(Colors.orangeAccent),
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                valueColor: const AlwaysStoppedAnimation(Colors.orangeAccent),
               ),
             ),
           ],
@@ -1389,7 +1389,7 @@ class _PomoPanel extends StatelessWidget {
             child: LinearProgressIndicator(
               value: total == 0 ? 0 : 1 - left / total,
               minHeight: 5,
-              backgroundColor: Colors.white10,
+              backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
               valueColor: const AlwaysStoppedAnimation(kBrand),
             ),
           ),
@@ -1426,7 +1426,7 @@ class _PomoPanel extends StatelessWidget {
   /// Dots for the current set of focus rounds: filled = rounds done
   /// (a running long break shows the set complete). Cycles reset when
   /// Pomodoro is turned off or a long break ends.
-  Widget _cycleDots(AppState st) {
+  Widget _cycleDots(BuildContext context, AppState st) {
     final n = st.cyclesBeforeLong;
     final filled = st.pomoBreakLong ? n : st.pomoCycles % n;
     return Row(
@@ -1439,7 +1439,7 @@ class _PomoPanel extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: i < filled ? kBrand : Colors.white24,
+              color: i < filled ? kBrand : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
             ),
           ),
         const SizedBox(width: 8),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kCard;
+import '../main.dart' show yptCardColor;
 import '../models.dart';
 import '../ypt_api.dart' show YptApiException;
 import 'timer_view.dart' show fmtMs;
@@ -160,7 +160,7 @@ class _ManualLogDialogState extends State<ManualLogDialog> {
     final dateLabel = DateFormat('EEE, MMM d, yyyy').format(_day);
 
     return AlertDialog(
-      backgroundColor: kCard,
+      backgroundColor: yptCardColor(context),
       title: const Text('Log study time', style: TextStyle(fontSize: 16)),
       content: SingleChildScrollView(
         child: Column(

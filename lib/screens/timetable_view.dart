@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kCard;
+import '../main.dart' show yptCardColor;
 import '../models.dart';
 
 /// Weekly timetable grid (read-only): the account's timetable
@@ -66,9 +66,7 @@ class _TimetablePageState extends State<TimetablePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0F),
         elevation: 0,
         title: const Text('Timetable',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -185,7 +183,7 @@ class _TimetablePageState extends State<TimetablePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 5),
                           decoration: BoxDecoration(
                             color: b == null
-                                ? Colors.white.withValues(alpha: 0.03)
+                                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03)
                                 : Color(b.colorInt)
                                     .withValues(alpha: 0.30),
                             borderRadius: BorderRadius.circular(4),
@@ -215,7 +213,7 @@ class _TimetablePageState extends State<TimetablePage> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-          color: kCard, borderRadius: BorderRadius.circular(10)),
+          color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
       child: Row(
         children: [
           Container(

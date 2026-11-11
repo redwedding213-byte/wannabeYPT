@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, kCard;
+import '../main.dart' show kBrand, yptCardColor;
 import '../models.dart';
 import 'timer_view.dart';
 import 'planner_view.dart';
@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_bannerFollowUp) {
       return Container(
         height: 34,
-        color: kCard,
+        color: yptCardColor(context),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
           children: [
@@ -253,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return Container(
       height: 34,
-      color: kCard,
+      color: yptCardColor(context),
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(
         children: [
@@ -298,9 +298,9 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
           decoration: BoxDecoration(
-            color: kCard,
+            color: yptCardColor(context),
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.45),
@@ -321,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         horizontal: 14, vertical: 5),
                     decoration: BoxDecoration(
                       color: _tab == i
-                          ? const Color(0xFF2C2C31)
+                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -331,13 +331,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(_tab == i ? items[i].$2 : items[i].$1,
                             size: 21,
                             color:
-                                _tab == i ? Colors.white : Colors.grey[500]),
+                                _tab == i ? Theme.of(context).colorScheme.onSurface : Colors.grey[500]),
                         const SizedBox(height: 2),
                         Text(items[i].$3,
                             style: TextStyle(
                                 fontSize: 10,
                                 color: _tab == i
-                                    ? Colors.white
+                                    ? Theme.of(context).colorScheme.onSurface
                                     : Colors.grey[500],
                                 fontWeight: _tab == i
                                     ? FontWeight.w700
@@ -362,9 +362,9 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: kCard,
+              color: yptCardColor(context),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
             ),
             child: Icon(
                 _tab == 3 ? Icons.group_add_outlined : Icons.question_mark,
@@ -380,16 +380,69 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: const Text('wannabeYPT', style: TextStyle(fontSize: 16)),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
                 'Unofficial web client for YPT (Yeolpumta). Everything syncs with your own YPT account — timers started here show up in the official app, and the other way round.',
                 style: TextStyle(fontSize: 13, color: Colors.grey)),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
+            StatefulBuilder(
+              builder: (dialogCtx, setDialogState) {
+                final st = dialogCtx.read<AppState>();
+                return Row(
+                  children: [
+                    const Icon(Icons.light_mode_outlined,
+                        size: 18, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('White mode',
+                          style: TextStyle(fontSize: 13)),
+                    ),
+                    Switch(
+                      value: st.lightTheme,
+                      activeThumbColor: kBrand,
+                      onChanged: (v) {
+                        st.setLightTheme(v);
+                        setDialogState(() {});
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 6),
+            StatefulBuilder(
+              builder: (dialogCtx, setDialogState) {
+                final st = dialogCtx.read<AppState>();
+                return Row(
+                  children: [
+                    const Icon(Icons.videogame_asset_outlined,
+                        size: 18, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Discord activity',
+                          style: TextStyle(fontSize: 13)),
+                    ),
+                    Switch(
+                      value: st.discordRpcEnabled,
+                      activeColor: kBrand,
+                      onChanged: (v) {
+                        st.setDiscordRpcEnabled(v);
+                        setDialogState(() {});
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+            const Text(
+                'Experimental: shows your study subject on Discord when Discord is running on this machine. Needs a Discord app set up first.',
+                style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+            const SizedBox(height: 6),
             const Text('From the developer',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
@@ -442,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setState) => AlertDialog(
-          backgroundColor: kCard,
+          backgroundColor: yptCardColor(context),
           title: const Text('Feedback', style: TextStyle(fontSize: 16)),
           content: SingleChildScrollView(
             child: Column(
@@ -473,12 +526,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.12)),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.12)),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
                     ),
                   ),
                 ),
@@ -494,12 +547,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.12)),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.12)),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
                     ),
                   ),
                 ),

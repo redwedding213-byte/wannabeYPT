@@ -208,6 +208,18 @@ class Subject {
       );
 
   Color get color => Color(colorValue == 0 ? 0xFF888888 : colorValue);
+
+  /// Local archive override: the server's archive call can succeed
+  /// while the reloaded subject list still carries dl=false, so the
+  /// Subjects page keeps the user's own archive choice on top.
+  Subject copyWith({bool? archived}) => Subject(
+        id: id,
+        title: title,
+        studyMs: studyMs,
+        order: order,
+        colorValue: colorValue,
+        archived: archived ?? this.archived,
+      );
 }
 
 class DayLog {

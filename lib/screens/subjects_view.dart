@@ -1,9 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
-import '../main.dart' show kCard;
+import '../main.dart' show yptCardColor;
 import '../models.dart';
 import 'timer_view.dart' show fmtMs;
+
+/// Local archive overrides, persisted per subject id. The server's
+/// archive call can return success while the reloaded subject list
+/// still carries dl=false — without these, an archived subject pops
+/// back to active after reload (Tara51's report). Overrides win
+/// over the server flag until the server agrees with them, exactly
+/// like the task done-overrides in AppState.reloadProfile.
+const _kArchivedIdsKey = 'wannabe_archived_subject_ids';
+const _kUnarchivedIdsKey = 'wannabe_unarchived_subject_ids';
 
 /// Subject management: add, rename, recolour, archive/unarchive and
 /// delete subjects on the server. Archived subjects come from the raw
@@ -34,11 +46,55 @@ class _SubjectsPageState extends State<SubjectsPage> {
   bool _failed = false;
   bool _busy = false;
   List<Subject> _subjects = [];
+  Set<int> _archivedIds = {};
+  Set<int> _unarchivedIds = {};
 
   @override
   void initState() {
     super.initState();
+    _loadOverrides();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _loadOverrides() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final archived = sp.getStringList(_kArchivedIdsKey) ?? const [];
+      final unarchived = sp.getStringList(_kUnarchivedIdsKey) ?? const [];
+      if (!mounted) return;
+      setState(() {
+        _archivedIds =
+            archived.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0).toSet();
+        _unarchivedIds = unarchived
+            .map((e) => int.tryParse(e) ?? 0)
+            .where((e) => e > 0)
+            .toSet();
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveOverrides() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setStringList(_kArchivedIdsKey,
+          _archivedIds.map((e) => e.toString()).toList());
+      await sp.setStringList(_kUnarchivedIdsKey,
+          _unarchivedIds.map((e) => e.toString()).toList());
+    } catch (_) {}
+  }
+
+  /// The user's own archive choice wins over the server's dl flag
+  /// until a reload shows the server agreeing with it.
+  Subject _applyOverrides(Subject s) {
+    if (_archivedIds.contains(s.id)) return s.copyWith(archived: true);
+    if (_unarchivedIds.contains(s.id)) return s.copyWith(archived: false);
+    return s;
+  }
+
+  void _dropAgreedOverrides(List<Subject> fresh) {
+    final byId = {for (final s in fresh) s.id: s.archived};
+    _archivedIds.removeWhere((id) => byId[id] == true);
+    _unarchivedIds.removeWhere((id) => byId[id] == false);
   }
 
   Future<void> _load() async {
@@ -55,11 +111,16 @@ class _SubjectsPageState extends State<SubjectsPage> {
           .whereType<Map<String, dynamic>>()
           .map(Subject.fromJson)
           .where((s) => s.title.isNotEmpty)
+          .map(_applyOverrides)
           .toList()
         ..sort((a, b) {
           if (a.archived != b.archived) return a.archived ? 1 : -1;
           return a.order.compareTo(b.order);
         });
+      // Fresh server state is ground truth: drop overrides the
+      // server now agrees with; keep the rest (propagation lag).
+      _dropAgreedOverrides(all);
+      unawaited(_saveOverrides());
       if (!mounted) return;
       setState(() {
         _subjects = all;
@@ -95,7 +156,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialog) => AlertDialog(
-          backgroundColor: kCard,
+          backgroundColor: yptCardColor(context),
           title: Text(subject == null ? 'Add subject' : 'Edit subject',
               style: const TextStyle(fontSize: 16)),
           content: Column(
@@ -177,9 +238,32 @@ class _SubjectsPageState extends State<SubjectsPage> {
   Future<void> _toggleArchive(Subject s) async {
     final st = context.read<AppState>();
     setState(() => _busy = true);
-    final ok =
-        await st.api.archiveSubject(id: s.id, archived: !s.archived);
-    if (mounted) setState(() => _busy = false);
+    final target = !s.archived;
+    final ok = await st.api.archiveSubject(id: s.id, archived: target);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
+      // Record the user's choice so the subject stays archived (or
+      // unarchived) even if the reload still shows the old dl flag,
+      // and flip it in the list right away — no waiting on reload.
+      if (target) {
+        _archivedIds.add(s.id);
+        _unarchivedIds.remove(s.id);
+      } else {
+        _unarchivedIds.add(s.id);
+        _archivedIds.remove(s.id);
+      }
+      unawaited(_saveOverrides());
+      setState(() {
+        _subjects = _subjects
+            .map((x) => x.id == s.id ? x.copyWith(archived: target) : x)
+            .toList()
+          ..sort((a, b) {
+            if (a.archived != b.archived) return a.archived ? 1 : -1;
+            return a.order.compareTo(b.order);
+          });
+      });
+    }
     await _afterWrite(ok);
   }
 
@@ -187,7 +271,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: const Text('Delete subject',
             style: TextStyle(fontSize: 16)),
         content: Text('Delete "${s.title}" permanently?',
@@ -218,9 +302,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
     final active = _subjects.where((s) => !s.archived).toList();
     final archived = _subjects.where((s) => s.archived).toList();
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0F),
         elevation: 0,
         title: const Text('Subjects',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -289,7 +371,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-          color: kCard, borderRadius: BorderRadius.circular(10)),
+          color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
       child: Row(
         children: [
           Container(

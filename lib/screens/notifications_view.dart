@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, kCard;
+import '../main.dart' show kBrand, yptCardColor;
 import '../models.dart';
 
 /// Notification center (read-only apart from read flags): the
@@ -74,9 +74,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     final unreadCount = _items.where((n) => !_isRead(n)).length;
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0F),
         elevation: 0,
         title: const Text('Notifications',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -137,7 +135,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         padding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         decoration: BoxDecoration(
-            color: kCard, borderRadius: BorderRadius.circular(10)),
+            color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, kCard, kBg;
+import '../main.dart' show kBrand, yptCardColor;
 import '../models.dart';
 import 'timer_view.dart' show fmtMs;
 
@@ -131,7 +131,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
     final send = await showDialog<bool>(
       context: context,
       builder: (d) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: Text('Shake ${m.nickname}?'),
         content: const Text(
             'They will get a nudge to get back to studying.'),
@@ -233,7 +233,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
     final live = m.isLive;
     final displayMs = m.liveDisplayMs(DateTime.now());
     return Material(
-      color: kBg,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           Align(
@@ -394,7 +394,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                                   (maxMs == 0 ? 1 : maxMs)),
                       decoration: BoxDecoration(
                         color: days[i].isAfter(today)
-                            ? Colors.white.withValues(alpha: 0.05)
+                            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
                             : kBrand.withValues(
                                 alpha: _weekMs[AppState.dateStr(days[i])] ==
                                         null
@@ -407,7 +407,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                     Text(labels[i],
                         style: TextStyle(
                             color: days[i] == today
-                                ? Colors.white
+                                ? Theme.of(context).colorScheme.onSurface
                                 : Colors.grey[500],
                             fontSize: 11.5,
                             fontWeight: days[i] == today
@@ -499,10 +499,10 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                 ? Colors.transparent
                 : ms > 0
                     ? kBrand.withValues(alpha: 0.18 + 0.62 * frac)
-                    : Colors.white.withValues(alpha: 0.04),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(6),
             border: selected
-                ? Border.all(color: Colors.white, width: 1.4)
+                ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 1.4)
                 : null,
           ),
           child: Column(
@@ -517,10 +517,10 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
               if (ms > 0) ...[
                 const SizedBox(height: 2),
                 Text(_fmtHM(ms),
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 10.5,
-                        fontFeatures: [FontFeature.tabularFigures()])),
+                        fontFeatures: const [FontFeature.tabularFigures()])),
               ],
             ],
           ),
@@ -557,7 +557,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: kCard, borderRadius: BorderRadius.circular(14)),
+          color: yptCardColor(context), borderRadius: BorderRadius.circular(14)),
       child: Column(
         children: [
           Row(

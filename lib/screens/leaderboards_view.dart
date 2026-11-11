@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, kCard;
+import '../main.dart' show kBrand, yptCardColor;
 import '../models.dart';
 import 'timer_view.dart' show fmtMs;
 
@@ -81,9 +81,7 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
     final st = context.watch<AppState>();
     final category = st.user?.category ?? '';
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0F),
         elevation: 0,
         title: const Text('Leaderboards',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -114,7 +112,7 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-                color: kCard, borderRadius: BorderRadius.circular(12)),
+                color: yptCardColor(context), borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
                 const Icon(Icons.emoji_events_outlined,
@@ -182,16 +180,16 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-          color: kCard, borderRadius: BorderRadius.circular(10)),
+          color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
       child: Row(
         children: [
           CircleAvatar(
             radius: 12,
-            backgroundColor: rank <= 3 ? kBrand : Colors.white12,
+            backgroundColor: rank <= 3 ? kBrand : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
             child: Text('$rank',
                 style: TextStyle(
                     fontSize: 10.5,
-                    color: rank <= 3 ? Colors.white : Colors.grey[300],
+                    color: rank <= 3 ? Colors.white : (Theme.of(context).brightness == Brightness.light ? Colors.grey[700] : Colors.grey[300]),
                     fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 10),

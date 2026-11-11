@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand;
+import '../main.dart' show kBrand, yptCard2Color;
 import '../models.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
@@ -38,6 +38,7 @@ class PomodoroDialWidget extends StatelessWidget {
       painter: _PomodoroDialPainter(
         fraction: fraction,
         targetMinutes: focusMinutes,
+        foreground: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -46,10 +47,12 @@ class PomodoroDialWidget extends StatelessWidget {
 class _PomodoroDialPainter extends CustomPainter {
   final double fraction; // 1.0 (full) down to 0.0 (done)
   final int targetMinutes;
+  final Color foreground; // onSurface: needle/ticks stay visible in both themes
 
   _PomodoroDialPainter({
     required this.fraction,
     required this.targetMinutes,
+    required this.foreground,
   });
 
   @override
@@ -59,12 +62,12 @@ class _PomodoroDialPainter extends CustomPainter {
 
     // Outer circle ticks (60 minute markers)
     final tickPaint = Paint()
-      ..color = const Color(0x66FFFFFF)
+      ..color = foreground.withValues(alpha: 0.4)
       ..strokeWidth = 1.0
       ..strokeCap = StrokeCap.round;
 
     final majorTickPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
+      ..color = foreground.withValues(alpha: 0.85)
       ..strokeWidth = 1.6
       ..strokeCap = StrokeCap.round;
 
@@ -90,7 +93,7 @@ class _PomodoroDialPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: '$m',
         style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.65),
+          color: foreground.withValues(alpha: 0.65),
           fontSize: size.width > 70 ? 7.5 : 6.5,
           fontWeight: FontWeight.w600,
         ),
@@ -118,10 +121,10 @@ class _PomodoroDialPainter extends CustomPainter {
       );
     }
 
-    // Center pivot & white pointer hand pointing to current fraction
+    // Center pivot & pointer hand pointing to current fraction
     final needleAngle = -math.pi / 2 + sweepAngle;
     final needlePaint = Paint()
-      ..color = Colors.white
+      ..color = foreground
       ..strokeWidth = 2.0
       ..strokeCap = StrokeCap.round;
 
@@ -132,7 +135,7 @@ class _PomodoroDialPainter extends CustomPainter {
     final hubPaint = Paint()..color = const Color(0xFF1E1E26);
     canvas.drawCircle(center, 3.5, hubPaint);
     final hubBorder = Paint()
-      ..color = Colors.white
+      ..color = foreground
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, 3.5, hubBorder);
@@ -317,7 +320,7 @@ class _BreakLogDialogState extends State<BreakLogDialog> {
           color: const Color(0xF21C1C24),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.16),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
             width: 1,
           ),
           boxShadow: [
@@ -339,10 +342,10 @@ class _BreakLogDialogState extends State<BreakLogDialog> {
                 children: [
                   Text(
                     'Break log ${_fmtBreak(widget.duration)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -381,7 +384,7 @@ class _BreakLogDialogState extends State<BreakLogDialog> {
                       decoration: BoxDecoration(
                         color: isSel
                             ? kBrand.withValues(alpha: 0.25)
-                            : Colors.white.withValues(alpha: 0.08),
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSel ? kBrand : Colors.transparent,
@@ -459,7 +462,7 @@ class StudyBottomDock extends StatelessWidget {
           color: const Color(0xF21C1C24),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.16),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
             width: 1,
           ),
           boxShadow: [
@@ -508,14 +511,14 @@ class StudyBottomDock extends StatelessWidget {
               height: 20,
               width: 1,
               margin: const EdgeInsets.symmetric(horizontal: 4),
-              color: Colors.white12,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
             ),
             InkWell(
               onTap: () {
                 showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
-                    backgroundColor: const Color(0xFF1E1E26),
+                    backgroundColor: yptCard2Color(context),
                     title: const Text('Study Mode',
                         style: TextStyle(fontSize: 16)),
                     content: const Text(
@@ -609,7 +612,7 @@ void showYptFeaturesMenu(BuildContext context) {
               color: const Color(0xF21C1C24),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.16),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
                 width: 1,
               ),
               boxShadow: [
@@ -636,6 +639,7 @@ void showYptFeaturesMenu(BuildContext context) {
                         children: [
                           _yptCategoryTitle('Main features'),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.bar_chart_outlined,
                             'Statistics',
                             () {
@@ -644,6 +648,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.star_outline_rounded,
                             'Rankings',
                             () {
@@ -656,6 +661,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             isPomo ? Icons.timer : Icons.timer_outlined,
                             'Pomodoro',
                             () {
@@ -665,6 +671,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             badge: isPomo ? 'ON' : null,
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.edit_outlined,
                             'Edit log',
                             () {
@@ -675,6 +682,7 @@ void showYptFeaturesMenu(BuildContext context) {
                           const SizedBox(height: 18),
                           _yptCategoryTitle('Goals & Target'),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.flag_outlined,
                             'D-Day · ${yptDdayLabel(st)}',
                             () {
@@ -683,6 +691,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.track_changes_outlined,
                             st.goalMinutes > 0
                                 ? 'Daily goal (${st.goalMinutes ~/ 60}h)'
@@ -705,6 +714,7 @@ void showYptFeaturesMenu(BuildContext context) {
                         children: [
                           _yptCategoryTitle('Extra features'),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.menu_book_outlined,
                             'Books',
                             () {
@@ -717,6 +727,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.calendar_view_week_outlined,
                             'Timetable',
                             () {
@@ -729,6 +740,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.notifications_outlined,
                             'Notifications',
                             () {
@@ -741,6 +753,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.groups_outlined,
                             'Groups',
                             () {
@@ -751,6 +764,7 @@ void showYptFeaturesMenu(BuildContext context) {
                           const SizedBox(height: 18),
                           _yptCategoryTitle('More'),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.help_outline,
                             'Help',
                             () {
@@ -759,6 +773,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           _yptMenuItem(
+                            dlgCtx,
                             Icons.logout_rounded,
                             'Log out',
                             () {
@@ -796,7 +811,8 @@ Widget _yptCategoryTitle(String title) {
   );
 }
 
-Widget _yptMenuItem(IconData icon, String label, VoidCallback onTap,
+Widget _yptMenuItem(BuildContext context, IconData icon, String label,
+    VoidCallback onTap,
     {String? badge, Color? color}) {
   return InkWell(
     onTap: onTap,
@@ -812,7 +828,7 @@ Widget _yptMenuItem(IconData icon, String label, VoidCallback onTap,
               label,
               style: TextStyle(
                 fontSize: 12.5,
-                color: color ?? Colors.white,
+                color: color ?? Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w400,
               ),
               maxLines: 1,
@@ -873,7 +889,7 @@ Future<void> _yptEditDday(BuildContext context, AppState st) async {
   final action = await showDialog<String>(
     context: context,
     builder: (_) => AlertDialog(
-      backgroundColor: const Color(0xFF1E1E26),
+      backgroundColor: yptCard2Color(context),
       title: const Text('D-Day', style: TextStyle(fontSize: 16)),
       content: const Text(
         'A countdown chip for your target date (exam day, for example).',
@@ -918,7 +934,7 @@ Future<void> _yptEditGoal(BuildContext context, AppState st) async {
   final result = await showDialog<int>(
     context: context,
     builder: (_) => AlertDialog(
-      backgroundColor: const Color(0xFF1E1E26),
+      backgroundColor: yptCard2Color(context),
       title: const Text('Daily goal', style: TextStyle(fontSize: 16)),
       content: Row(
         children: [
@@ -967,7 +983,7 @@ void _yptHelpDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
-      backgroundColor: const Color(0xFF1E1E26),
+      backgroundColor: yptCard2Color(context),
       title: const Text('wannabeYPT Help', style: TextStyle(fontSize: 16)),
       content: const Text(
         'wannabeYPT is an unofficial YPT client tailored for laptop/PC study.\n\n'

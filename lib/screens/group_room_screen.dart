@@ -8,7 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, kBg, kCard, kCard2;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color;
 import 'timer_view.dart' show fmtMs;
 import 'stats_view.dart' show fmtHM;
 import 'member_profile_page.dart';
@@ -252,7 +252,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     final send = await showDialog<bool>(
       context: context,
       builder: (d) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: const Text('Shake all members?'),
         content: const Text(
             'Everyone in this group gets a nudge to get back to studying.'),
@@ -291,7 +291,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: Text(g.title, style: const TextStyle(fontSize: 16)),
         content: SingleChildScrollView(
           child: Column(
@@ -375,7 +375,6 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
   PreferredSizeWidget _roomAppBar(AppState st, Group g) {
     if (!st.studying) {
       return AppBar(
-        backgroundColor: kBg,
         elevation: 0,
         centerTitle: true,
         title: Text(g.title,
@@ -403,7 +402,6 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         : st.elapsed;
 
     return AppBar(
-      backgroundColor: kBg,
       elevation: 0,
       automaticallyImplyLeading: false,
       title: InkWell(
@@ -463,9 +461,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
-      decoration: const BoxDecoration(
-        color: kBg,
-        border: Border(bottom: BorderSide(color: Color(0x14FFFFFF))),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08))),
       ),
       child: pomoOn
           ? Row(
@@ -511,7 +509,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(Icons.pause,
@@ -577,7 +575,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: const Icon(Icons.pause,
@@ -620,7 +618,6 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
 
     if (st.studying) {
       return Scaffold(
-        backgroundColor: kBg,
         appBar: _roomAppBar(st, g),
         body: Column(
           children: [
@@ -631,10 +628,10 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                 children: [
                   Text(
                     g.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -663,7 +660,6 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     }
 
     return Scaffold(
-      backgroundColor: kBg,
       appBar: _roomAppBar(st, g),
       body: Column(
         children: [
@@ -691,9 +687,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       (Icons.chat_bubble_outline, Icons.chat_bubble, 'Chat'),
     ];
     return Container(
-      decoration: const BoxDecoration(
-        color: kCard,
-        border: Border(top: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: yptCardColor(context),
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
       ),
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -738,7 +734,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           margin: const EdgeInsets.fromLTRB(14, 4, 14, 12),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
-              color: kCard, borderRadius: BorderRadius.circular(10)),
+              color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
           child: Row(
             children: [
               const Icon(Icons.campaign_outlined, size: 17, color: kBrand),
@@ -764,9 +760,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                 text: TextSpan(
                   style: const TextStyle(fontSize: 13),
                   children: [
-                    const TextSpan(
+                    TextSpan(
                         text: 'Studying ',
-                        style: TextStyle(color: Colors.white70)),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
                     TextSpan(
                       text: '$liveCount members',
                       style: const TextStyle(
@@ -782,10 +778,10 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                 child: Container(
                   width: 22,
                   height: 22,
-                  decoration: const BoxDecoration(
-                      color: kCard2, shape: BoxShape.circle),
-                  child: const Icon(Icons.refresh,
-                      size: 13, color: Colors.white70),
+                  decoration: BoxDecoration(
+                      color: yptCard2Color(context), shape: BoxShape.circle),
+                  child: Icon(Icons.refresh,
+                      size: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
                 ),
               ),
             ],
@@ -921,10 +917,10 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: kCard,
+        color: yptCardColor(context),
         borderRadius: BorderRadius.circular(10),
         border: isMe
-            ? Border.all(color: Colors.white.withValues(alpha: 0.3))
+            ? Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3))
             : null,
       ),
       child: Column(
@@ -934,11 +930,11 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: rank <= 3 ? kBrand : Colors.white12,
+                backgroundColor: rank <= 3 ? kBrand : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
                 child: Text('$rank',
                     style: TextStyle(
                         fontSize: 10.5,
-                        color: rank <= 3 ? Colors.white : Colors.grey[300],
+                        color: rank <= 3 ? Colors.white : (Theme.of(context).brightness == Brightness.light ? Colors.grey[700] : Colors.grey[300]),
                         fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 9),
@@ -1105,10 +1101,10 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       margin: const EdgeInsets.only(bottom: 7),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: kCard,
+        color: yptCardColor(context),
         borderRadius: BorderRadius.circular(10),
         border: isMe
-            ? Border.all(color: Colors.white.withValues(alpha: 0.3))
+            ? Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3))
             : null,
       ),
       child: Row(
@@ -1376,7 +1372,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
         content: Wrap(
@@ -1418,7 +1414,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: const Text('Send an image', style: TextStyle(fontSize: 16)),
         content: TextField(
           controller: ctrl,
@@ -1460,7 +1456,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-                color: kCard, borderRadius: BorderRadius.circular(10)),
+                color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
             child: Row(
               children: [
                 Expanded(
@@ -1565,7 +1561,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-              color: kCard2, borderRadius: BorderRadius.circular(12)),
+              color: yptCard2Color(context), borderRadius: BorderRadius.circular(12)),
           child: Text(label,
               style: TextStyle(color: Colors.grey[400], fontSize: 11.5)),
         ),
@@ -1649,7 +1645,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: self ? kBrand.withValues(alpha: 0.25) : kCard2,
+        color: self ? kBrand.withValues(alpha: 0.25) : yptCard2Color(context),
         borderRadius: BorderRadius.circular(11),
         border: self ? Border.all(color: kBrand) : null,
       ),
@@ -1677,23 +1673,23 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     final ch = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return CircleAvatar(
       radius: 16,
-      backgroundColor: kCard2,
+      backgroundColor: yptCard2Color(context),
       child: Text(ch,
           style: TextStyle(color: Colors.grey[300], fontSize: 14)),
     );
   }
 
   Widget _chatBubble(ChatMessage m, bool own) {
-    final bg = own ? kBrand : kCard2;
-    final fg = own ? Colors.white : Colors.grey[100];
+    final bg = own ? kBrand : yptCard2Color(context);
+    final fg = own ? Colors.white : (Theme.of(context).brightness == Brightness.light ? Colors.grey[800] : Colors.grey[100]);
     Widget content;
     if (m.isSticker) {
       content = Image.network(
         m.stickerUrl!,
         height: 140,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image,
-            size: 40, color: Colors.white54),
+        errorBuilder: (_, __, ___) => Icon(Icons.broken_image,
+            size: 40, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
       );
     } else if (m.isImage) {
       content = ClipRRect(
@@ -1705,8 +1701,8 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           errorBuilder: (_, __, ___) => Container(
             height: 120,
             alignment: Alignment.center,
-            child: const Icon(Icons.broken_image,
-                size: 36, color: Colors.white54),
+            child: Icon(Icons.broken_image,
+                size: 36, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
           ),
         ),
       );
@@ -1731,9 +1727,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     final sets = _stickerSets;
     return Container(
       height: 230,
-      decoration: const BoxDecoration(
-        color: kCard,
-        border: Border(top: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: yptCardColor(context),
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
       ),
       child: _stickersLoading || sets == null
           ? const Center(child: CircularProgressIndicator())
@@ -1802,9 +1798,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
 
   Widget _composer() {
     return Container(
-      decoration: const BoxDecoration(
-        color: kCard,
-        border: Border(top: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: yptCardColor(context),
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
       ),
       padding: const EdgeInsets.fromLTRB(6, 6, 6, 10),
       child: Row(
@@ -1940,7 +1936,7 @@ class _MemberTile extends StatelessWidget {
                 ? Border.all(
                     color: studying
                         ? kBrand
-                        : Colors.white.withValues(alpha: 0.30),
+                        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.30),
                     width: 1.2,
                   )
                 : null,

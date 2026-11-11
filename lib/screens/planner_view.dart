@@ -18,7 +18,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, kCard;
+import '../main.dart' show kBrand, yptCardColor;
 import 'timer_view.dart' show fmtMs;
 
 /// To-Do in the shape of the official YPT app's To-Do screen:
@@ -47,8 +47,15 @@ class _PlannerViewState extends State<PlannerView> {
   final _taskCtl = TextEditingController();
   String? _addingSubject; // null = inline add closed; '' = General
 
-  static const _square = Color(0xFF1D1D21);
-  static const _hair = Color(0xFF1B1B1F);
+  // Heatmap cell / hairline colours, light-aware (dark values preserved).
+  static Color _squareOf(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.light
+          ? const Color(0xFFE9E9E6)
+          : const Color(0xFF1D1D21);
+  static Color _hairOf(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.light
+          ? const Color(0xFFDCDCD8)
+          : const Color(0xFF1B1B1F);
 
   @override
   void initState() {
@@ -140,7 +147,7 @@ class _PlannerViewState extends State<PlannerView> {
                         style: TextStyle(
                           fontSize: 11,
                           color: AppState.dateStr(d) == _key
-                              ? Colors.white
+                              ? Theme.of(context).colorScheme.onSurface
                               : Colors.grey[500],
                           fontWeight: AppState.dateStr(d) == _key
                               ? FontWeight.w600
@@ -174,7 +181,7 @@ class _PlannerViewState extends State<PlannerView> {
             style: TextStyle(color: Colors.grey[500], fontSize: 12.5),
           ),
         const SizedBox(height: 6),
-        const Divider(height: 1, color: _hair),
+        Divider(height: 1, color: _hairOf(context)),
         if (st.plannerNotice != null)
           Padding(
             padding: const EdgeInsets.only(top: 10),
@@ -218,7 +225,7 @@ class _PlannerViewState extends State<PlannerView> {
       width: 25,
       height: 25,
       decoration: BoxDecoration(
-        color: selected ? kBrand.withValues(alpha: 0.20) : _square,
+        color: selected ? kBrand.withValues(alpha: 0.20) : _squareOf(context),
         borderRadius: BorderRadius.circular(7),
       ),
       child: Center(
@@ -346,8 +353,8 @@ class _PlannerViewState extends State<PlannerView> {
                 hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: _hair)),
+                enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: _hairOf(context))),
                 focusedBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: kBrand)),
               ),
@@ -358,9 +365,9 @@ class _PlannerViewState extends State<PlannerView> {
               },
             ),
           ),
-        const Padding(
-          padding: EdgeInsets.only(top: 10),
-          child: Divider(height: 1, color: _hair),
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Divider(height: 1, color: _hairOf(context)),
         ),
       ],
     );
@@ -380,7 +387,7 @@ class _PlannerViewState extends State<PlannerView> {
     final current = st.serverTaskScore(t);
     final picked = await showMenu<int>(
       context: iconCtx,
-      color: kCard,
+      color: yptCardColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       position: RelativeRect.fromLTRB(
           pos.dx, pos.dy + box.size.height, pos.dx + box.size.width, pos.dy),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, kCard;
+import '../main.dart' show kBrand, yptCardColor;
 import '../models.dart';
 import '../ypt_api.dart';
 
@@ -162,7 +162,7 @@ class _ChallengesPageState extends State<ChallengesPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: Text('Join: ${challenge.name}',
             style: const TextStyle(fontSize: 16)),
         content: Column(
@@ -226,7 +226,7 @@ class _ChallengesPageState extends State<ChallengesPage>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         title: Text('Leave: ${challenge.name}',
             style: const TextStyle(fontSize: 16)),
         content: const Text(
@@ -269,10 +269,10 @@ class _ChallengesPageState extends State<ChallengesPage>
     final progress = c.progress;
     return Container(
       decoration: BoxDecoration(
-        color: kCard,
+        color: yptCardColor(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: c.isJoined ? kBrand : Colors.white.withValues(alpha: 0.08),
+          color: c.isJoined ? kBrand : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
           width: c.isJoined ? 1.5 : 1,
         ),
       ),
@@ -330,7 +330,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(c.type,
@@ -371,7 +371,7 @@ class _ChallengesPageState extends State<ChallengesPage>
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                 color: kBrand,
                 minHeight: 6,
               ),
@@ -448,7 +448,7 @@ class _ChallengesPageState extends State<ChallengesPage>
     final when = log.startAt != null ? df.format(log.startAt!) : '';
     return Container(
       decoration: BoxDecoration(
-        color: kCard,
+        color: yptCardColor(context),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(12),
@@ -472,7 +472,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(log.type,
@@ -577,9 +577,7 @@ class _ChallengesPageState extends State<ChallengesPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0F),
         title: const Text('Challenges',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
         actions: [
@@ -592,7 +590,7 @@ class _ChallengesPageState extends State<ChallengesPage>
         bottom: TabBar(
           controller: _tabs,
           indicatorColor: kBrand,
-          labelColor: Colors.white,
+          labelColor: Theme.of(context).colorScheme.onSurface,
           unselectedLabelColor: Colors.grey,
           tabs: const [
             Tab(text: 'Available'),

@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, kCard, kCard2;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color;
 import 'manual_log_dialog.dart';
 import 'timer_view.dart' show fmtMs;
 
@@ -186,10 +186,10 @@ class _StatsViewState extends State<StatsView> {
                 ? Colors.transparent
                 : total > 0
                     ? kBrand.withValues(alpha: 0.10 + 0.55 * intensity)
-                    : Colors.white.withValues(alpha: 0.04),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(8),
             border: isSelected
-                ? Border.all(color: Colors.white, width: 1.4)
+                ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 1.4)
                 : Border.all(color: Colors.transparent, width: 1.4),
           ),
           child: Column(
@@ -339,7 +339,7 @@ class _StatsViewState extends State<StatsView> {
       Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-            color: kCard, borderRadius: BorderRadius.circular(12)),
+            color: yptCardColor(context), borderRadius: BorderRadius.circular(12)),
         child: Column(
           children: [
             Row(
@@ -414,7 +414,7 @@ class _StatsViewState extends State<StatsView> {
                       value:
                           subjectTotal == 0 ? 0 : e.value / subjectTotal,
                       minHeight: 9,
-                      backgroundColor: Colors.white10,
+                      backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                       valueColor: AlwaysStoppedAnimation(color),
                     ),
                   ),
@@ -487,13 +487,13 @@ class _StatsViewState extends State<StatsView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-          color: kCard2, borderRadius: BorderRadius.circular(20)),
+          color: yptCard2Color(context), borderRadius: BorderRadius.circular(20)),
       child: Text(text, style: const TextStyle(fontSize: 11.5)),
     );
   }
 
   Color _subjectColor(AppState st, String title) {
-    if (title.startsWith('#')) return Colors.white38;
+    if (title.startsWith('#')) return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
     final norm = title.trim().toLowerCase();
     for (final s in st.user?.subjects ?? const <Subject>[]) {
       if (s.title.trim().toLowerCase() == norm) return s.color;
@@ -517,12 +517,12 @@ class _StatsViewState extends State<StatsView> {
         }
       }
       final color = hit == null
-          ? Colors.white.withValues(alpha: 0.05)
+          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)
           : hit.kind == 'study'
               ? kBrand.withValues(alpha: 0.8)
               : hit.kind == 'rest'
                   ? Colors.blueGrey.withValues(alpha: 0.7)
-                  : Colors.white.withValues(alpha: 0.28);
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.28);
       cells.add(Expanded(
         child: Container(
           height: 15,
@@ -553,7 +553,7 @@ class _StatsViewState extends State<StatsView> {
         ? _subjectColor(st, s.subject)
         : s.kind == 'rest'
             ? Colors.blueGrey
-            : Colors.white38;
+            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
     return InkWell(
       onTap: () => _showSession(st, s),
       borderRadius: BorderRadius.circular(10),
@@ -561,7 +561,7 @@ class _StatsViewState extends State<StatsView> {
         margin: const EdgeInsets.only(bottom: 7),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-            color: kCard, borderRadius: BorderRadius.circular(10)),
+            color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
         child: Row(
           children: [
             Container(width: 3.5, height: 34, color: color),
@@ -594,7 +594,7 @@ class _StatsViewState extends State<StatsView> {
   void _showSession(AppState st, DaySession s) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: kCard,
+      backgroundColor: yptCardColor(context),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (_) => Padding(
@@ -768,7 +768,7 @@ class _StatsViewState extends State<StatsView> {
                         : weekTotals[i] /
                             weekTotals.fold(1, (a, b) => a > b ? a : b),
                     minHeight: 10,
-                    backgroundColor: Colors.white10,
+                    backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                     valueColor: const AlwaysStoppedAnimation(kBrand),
                   ),
                 ),
@@ -999,7 +999,7 @@ class _StatsViewState extends State<StatsView> {
                 ? Colors.transparent
                 : ms > 0
                     ? kBrand.withValues(alpha: 0.10 + 0.55 * intensity)
-                    : Colors.white.withValues(alpha: 0.04),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(3),
           ),
         ),
@@ -1079,7 +1079,7 @@ class _StatsViewState extends State<StatsView> {
       width: 148,
       padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
-          color: kCard, borderRadius: BorderRadius.circular(10)),
+          color: yptCardColor(context), borderRadius: BorderRadius.circular(10)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

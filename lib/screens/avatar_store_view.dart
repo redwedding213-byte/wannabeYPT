@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, kCard;
+import '../main.dart' show kBrand, yptCardColor;
 import '../models.dart';
 import '../ypt_api.dart';
 
@@ -196,9 +196,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0F),
         title: const Text('Avatar Store',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
         actions: [
@@ -211,7 +209,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
         bottom: TabBar(
           controller: _tabs,
           indicatorColor: kBrand,
-          labelColor: Colors.white,
+          labelColor: Theme.of(context).colorScheme.onSurface,
           unselectedLabelColor: Colors.grey,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
@@ -315,9 +313,9 @@ class _AvatarStorePageState extends State<AvatarStorePage>
           setState(() => _selectedTagId = tagId);
         },
         selectedColor: kBrand,
-        backgroundColor: kCard,
+        backgroundColor: yptCardColor(context),
         labelStyle: TextStyle(
-          color: selected ? Colors.white : Colors.grey[300],
+          color: selected ? Colors.white : (Theme.of(context).brightness == Brightness.light ? Colors.grey[700] : Colors.grey[300]),
           fontSize: 12,
         ),
         side: BorderSide(
@@ -357,7 +355,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: kCard,
+        color: yptCardColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: equipped ? kBrand : Colors.grey[800]!,
@@ -371,10 +369,10 @@ class _AvatarStorePageState extends State<AvatarStorePage>
             child: Image.network(
               item.previewUrl,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
+              errorBuilder: (_, __, ___) => Icon(
                 Icons.person_outline,
                 size: 56,
-                color: Colors.white54,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
               ),
             ),
           ),
@@ -386,8 +384,8 @@ class _AvatarStorePageState extends State<AvatarStorePage>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),
