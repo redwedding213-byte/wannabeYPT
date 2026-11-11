@@ -561,7 +561,7 @@ class AppState extends ChangeNotifier {
       _phaseEndsAt = null;
       // In-app persistent banner.
       pomoNoticeTitle = 'Focus over';
-      pomoNoticeBody = 'The study timer keeps running \u2014 pause when you want a break.';
+      pomoNoticeBody = 'The study timer keeps running. Pause when you want a break.';
       // System notification / beep.
       showAppNotification('Focus complete', pomoNoticeBody!);
       notifyListeners();
