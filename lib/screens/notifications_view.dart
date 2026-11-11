@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey400, yptGrey500, yptGrey600;
 import '../models.dart';
 
 /// Notification center (read-only apart from read flags): the
@@ -100,7 +100,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     children: [
                       Text('Could not load notifications',
                           style: TextStyle(
-                              color: Colors.grey[500], fontSize: 12)),
+                              color: yptGrey500(context), fontSize: 12)),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: _load,
@@ -114,7 +114,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ? Center(
                       child: Text('No notifications.',
                           style: TextStyle(
-                              color: Colors.grey[500], fontSize: 12)),
+                              color: yptGrey500(context), fontSize: 12)),
                     )
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -166,13 +166,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            color: Colors.grey[400], fontSize: 12.5)),
+                            color: yptGrey400(context), fontSize: 12.5)),
                   ],
                   const SizedBox(height: 4),
                   Text(
                       DateFormat('MMM d, h:mm a').format(n.createdAt),
                       style:
-                          TextStyle(color: Colors.grey[600], fontSize: 11)),
+                          TextStyle(color: yptGrey600(context), fontSize: 11)),
                 ],
               ),
             ),

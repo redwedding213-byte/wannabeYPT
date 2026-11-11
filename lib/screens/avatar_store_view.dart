@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey500;
 import '../models.dart';
 import '../ypt_api.dart';
 
@@ -210,7 +210,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
           controller: _tabs,
           indicatorColor: kBrand,
           labelColor: Theme.of(context).colorScheme.onSurface,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: yptGrey500(context),
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           tabs: const [
@@ -230,13 +230,13 @@ class _AvatarStorePageState extends State<AvatarStorePage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.cloud_off_outlined,
-                            size: 48, color: Colors.grey),
+                        Icon(Icons.cloud_off_outlined,
+                            size: 48, color: yptGrey500(context)),
                         const SizedBox(height: 14),
                         Text(
                           _error ?? 'Could not load avatars.',
-                          style: const TextStyle(
-                              color: Colors.grey, fontSize: 13),
+                          style: TextStyle(
+                              color: yptGrey500(context), fontSize: 13),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
@@ -266,11 +266,11 @@ class _AvatarStorePageState extends State<AvatarStorePage>
                         ],
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                       child: Text(
                         'Buying avatars happens in the official YPT app — here you can equip the ones you own.',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(color: yptGrey500(context), fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -331,7 +331,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
     if (items.isEmpty) {
       return Center(
         child: Text(emptyText,
-            style: const TextStyle(color: Colors.grey, fontSize: 13)),
+            style: TextStyle(color: yptGrey500(context), fontSize: 13)),
       );
     }
     return GridView.builder(
@@ -402,7 +402,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
                 Text(
                   '${item.priceFlames} flames',
                   style:
-                      const TextStyle(color: Colors.grey, fontSize: 12),
+                      TextStyle(color: yptGrey500(context), fontSize: 12),
                 ),
               ],
             )
@@ -457,11 +457,11 @@ class _AvatarStorePageState extends State<AvatarStorePage>
                 color: Colors.grey[800],
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
                   'Not owned',
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: yptGrey500(context),
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),

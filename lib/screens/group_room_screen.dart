@@ -8,7 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, yptCardColor, yptCard2Color;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey300, yptGrey400, yptGrey500, yptGrey600;
 import 'timer_view.dart' show fmtMs;
 import 'stats_view.dart' show fmtHM;
 import 'member_profile_page.dart';
@@ -260,7 +260,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           TextButton(
             onPressed: () => Navigator.of(d).pop(false),
             child:
-                Text('Cancel', style: TextStyle(color: Colors.grey[400])),
+                Text('Cancel', style: TextStyle(color: yptGrey400(context))),
           ),
           TextButton(
             onPressed: () => Navigator.of(d).pop(true),
@@ -299,17 +299,17 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (g.slogan.isNotEmpty) ...[
-              Text(g.slogan, style: TextStyle(color: Colors.grey[300])),
+              Text(g.slogan, style: TextStyle(color: yptGrey300(context))),
               const SizedBox(height: 12),
             ],
             Text('Category: ${g.category}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 13)),
             const SizedBox(height: 4),
             Text('Owner: ${g.owner}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 13)),
             const SizedBox(height: 4),
             Text('Members: ${g.memberCount}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 13)),
           ],
           ),
         ),
@@ -421,7 +421,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
               Text(
                 _fmtDuration(subTime),
                 style: TextStyle(
-                  color: Colors.grey[400],
+                  color: yptGrey400(context),
                   fontSize: 13,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
@@ -483,7 +483,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                       Text(
                         'Remaining time',
                         style: TextStyle(
-                          color: Colors.grey[400],
+                          color: yptGrey400(context),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
                         ),
@@ -547,7 +547,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                       Text(
                         'Current focus time',
                         style: TextStyle(
-                          color: Colors.grey[400],
+                          color: yptGrey400(context),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
                         ),
@@ -646,7 +646,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.more_horiz, size: 18),
-                    color: Colors.grey[500],
+                    color: yptGrey500(context),
                     onPressed: _showInfo,
                   ),
                 ],
@@ -705,12 +705,12 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                     children: [
                       Icon(_tab == i ? items[i].$2 : items[i].$1,
                           size: 21,
-                          color: _tab == i ? kBrand : Colors.grey[500]),
+                          color: _tab == i ? kBrand : yptGrey500(context)),
                       const SizedBox(height: 2),
                       Text(items[i].$3,
                           style: TextStyle(
                               fontSize: 10.5,
-                              color: _tab == i ? kBrand : Colors.grey[500],
+                              color: _tab == i ? kBrand : yptGrey500(context),
                               fontWeight: _tab == i
                                   ? FontWeight.w700
                                   : FontWeight.w500)),
@@ -744,10 +744,10 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                   g.slogan.isNotEmpty ? g.slogan : 'Group introduction/rules',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey[300], fontSize: 13),
+                  style: TextStyle(color: yptGrey300(context), fontSize: 13),
                 ),
               ),
-              Icon(Icons.chevron_right, size: 18, color: Colors.grey[600]),
+              Icon(Icons.chevron_right, size: 18, color: yptGrey600(context)),
             ],
           ),
         ),
@@ -817,7 +817,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     if (members.isEmpty) {
       return Center(
         child: Text('No members visible (private group)',
-            style: TextStyle(color: Colors.grey[600])),
+            style: TextStyle(color: yptGrey600(context))),
       );
     }
     return GridView.builder(
@@ -883,7 +883,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             const Spacer(),
             Text(
                 '${DateFormat('M/d').format(monday)} ~ ${DateFormat('M/d').format(sunday)} · Weekly',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 12)),
           ],
         ),
         const SizedBox(height: 10),
@@ -895,7 +895,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                     color: kBrand, fontWeight: FontWeight.w600, fontSize: 13)),
             const Spacer(),
             Text('Group week total ${fmtHM(presentTotal)}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 12)),
           ],
         ),
         const SizedBox(height: 12),
@@ -950,7 +950,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                       fontFeatures: [FontFeature.tabularFigures()])),
               const SizedBox(width: 8),
               Text('$present d',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 11.5)),
+                  style: TextStyle(color: yptGrey500(context), fontSize: 11.5)),
             ],
           ),
           const SizedBox(height: 7),
@@ -963,8 +963,8 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                   style: TextStyle(
                       fontSize: 10.5,
                       color: (daily[AppState.dateStr(d)] ?? 0) > 0
-                          ? Colors.grey[300]
-                          : Colors.grey[600],
+                          ? yptGrey300(context)
+                          : yptGrey600(context),
                       fontFeatures: const [FontFeature.tabularFigures()]),
                 ),
             ],
@@ -1028,10 +1028,10 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         Row(
           children: [
             Text('Total time ${fmtMs(total)}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12.5)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
             const SizedBox(width: 14),
             Text('Average time ${fmtMs(avg)}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12.5)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
             const Spacer(),
             if (myRank >= 0)
               Text('My rank #${myRank + 1}',
@@ -1069,10 +1069,10 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         Row(
           children: [
             Text('Week total ${fmtMs(total)}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12.5)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
             const SizedBox(width: 14),
             Text('Average ${fmtMs(avg)}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12.5)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
             const Spacer(),
             if (myRank >= 0)
               Text('My rank #${myRank + 1}',
@@ -1114,7 +1114,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             child: Text('$rank',
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: rank <= 3 ? kBrand : Colors.grey[400])),
+                    color: rank <= 3 ? kBrand : yptGrey400(context))),
           ),
           if (live) ...[
             Container(
@@ -1140,14 +1140,14 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                   const SizedBox(width: 7),
                   Text(category,
                       style:
-                          TextStyle(fontSize: 10.5, color: Colors.grey[500])),
+                          TextStyle(fontSize: 10.5, color: yptGrey500(context))),
                 ],
               ],
             ),
           ),
           Text(fmtMs(ms),
               style: TextStyle(
-                  color: live ? kBrand : Colors.grey[300],
+                  color: live ? kBrand : yptGrey300(context),
                   fontFeatures: const [FontFeature.tabularFigures()])),
         ],
       ),
@@ -1164,7 +1164,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             Text(
               'Weekly data could not be loaded from the server right now. Daily rankings work as usual — try again in a bit.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[400], fontSize: 13),
+              style: TextStyle(color: yptGrey400(context), fontSize: 13),
             ),
             const SizedBox(height: 14),
             OutlinedButton.icon(
@@ -1461,11 +1461,11 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
               children: [
                 Expanded(
                   child: Text(_chatNotice!,
-                      style: TextStyle(color: Colors.grey[300], fontSize: 12.5)),
+                      style: TextStyle(color: yptGrey300(context), fontSize: 12.5)),
                 ),
                 InkWell(
                   onTap: () => setState(() => _chatNotice = null),
-                  child: Icon(Icons.close, size: 16, color: Colors.grey[500]),
+                  child: Icon(Icons.close, size: 16, color: yptGrey500(context)),
                 ),
               ],
             ),
@@ -1513,7 +1513,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                 _chatDiag ??
                     'No messages yet — say hi.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[400], fontSize: 13.5),
+                style: TextStyle(color: yptGrey400(context), fontSize: 13.5),
               ),
               if (_chatDiag != null) ...[
                 const SizedBox(height: 12),
@@ -1563,7 +1563,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           decoration: BoxDecoration(
               color: yptCard2Color(context), borderRadius: BorderRadius.circular(12)),
           child: Text(label,
-              style: TextStyle(color: Colors.grey[400], fontSize: 11.5)),
+              style: TextStyle(color: yptGrey400(context), fontSize: 11.5)),
         ),
       ),
     );
@@ -1577,7 +1577,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         child: Center(
           child: Text(m.text,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              style: TextStyle(color: yptGrey500(context), fontSize: 12)),
         ),
       );
     }
@@ -1602,7 +1602,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                     padding: const EdgeInsets.only(left: 2, bottom: 3),
                     child: Text(m.senderName,
                         style: TextStyle(
-                            color: Colors.grey[400],
+                            color: yptGrey400(context),
                             fontSize: 12,
                             fontWeight: FontWeight.w600)),
                   ),
@@ -1629,7 +1629,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                   padding: const EdgeInsets.only(top: 3, left: 2, right: 2),
                   child: Text(DateFormat('HH:mm').format(m.sentAt),
                       style: TextStyle(
-                          color: Colors.grey[600], fontSize: 10.5)),
+                          color: yptGrey600(context), fontSize: 10.5)),
                 ),
               ],
             ),
@@ -1675,7 +1675,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       radius: 16,
       backgroundColor: yptCard2Color(context),
       child: Text(ch,
-          style: TextStyle(color: Colors.grey[300], fontSize: 14)),
+          style: TextStyle(color: yptGrey300(context), fontSize: 14)),
     );
   }
 
@@ -1736,7 +1736,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           : sets.isEmpty
               ? Center(
                   child: Text('No sticker sets available',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                      style: TextStyle(color: yptGrey500(context), fontSize: 13)),
                 )
               : Column(
                   children: [
@@ -1785,7 +1785,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                               fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) => Icon(
                                   Icons.broken_image,
-                                  color: Colors.grey[600]),
+                                  color: yptGrey600(context)),
                             ),
                           );
                         },
@@ -1809,7 +1809,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           IconButton(
             tooltip: 'Stickers',
             icon: Icon(Icons.emoji_emotions_outlined,
-                color: _showStickers ? kBrand : Colors.grey[400]),
+                color: _showStickers ? kBrand : yptGrey400(context)),
             onPressed: () {
               setState(() => _showStickers = !_showStickers);
               if (_showStickers) _loadStickers();
@@ -1817,7 +1817,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           ),
           IconButton(
             tooltip: 'Send image by URL',
-            icon: Icon(Icons.image_outlined, color: Colors.grey[400]),
+            icon: Icon(Icons.image_outlined, color: yptGrey400(context)),
             onPressed: _showImageUrlDialog,
           ),
           Expanded(
@@ -1828,7 +1828,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
               textInputAction: TextInputAction.send,
               decoration: InputDecoration(
                 hintText: 'Message...',
-                hintStyle: TextStyle(color: Colors.grey[600]),
+                hintStyle: TextStyle(color: yptGrey600(context)),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20)),
                 contentPadding: const EdgeInsets.symmetric(
@@ -1879,7 +1879,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         SelectableText(
           link,
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey[400], fontSize: 11.5),
+          style: TextStyle(color: yptGrey400(context), fontSize: 11.5),
         ),
         const SizedBox(height: 14),
         Center(
@@ -1899,7 +1899,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         Text(
           'Share this link with friends you want to study with — opening it joins them to this group. Test it once on your phone before sharing it widely.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+          style: TextStyle(color: yptGrey500(context), fontSize: 12),
         ),
       ],
     );
@@ -1958,7 +1958,7 @@ class _MemberTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: accent ?? Colors.grey[300],
+                  color: accent ?? yptGrey300(context),
                 ),
               ),
               const SizedBox(height: 3),
@@ -1966,7 +1966,7 @@ class _MemberTile extends StatelessWidget {
                 fmtMs(displayMs),
                 style: TextStyle(
                   fontSize: 12.5,
-                  color: accent ?? Colors.grey[500],
+                  color: accent ?? yptGrey500(context),
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),

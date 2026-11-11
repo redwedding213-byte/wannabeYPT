@@ -18,7 +18,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey100, yptGrey400, yptGrey500, yptGrey600;
 import 'timer_view.dart' show fmtMs;
 
 /// To-Do in the shape of the official YPT app's To-Do screen:
@@ -120,13 +120,13 @@ class _PlannerViewState extends State<PlannerView> {
             ),
             IconButton(
               visualDensity: VisualDensity.compact,
-              icon: Icon(Icons.chevron_left, size: 20, color: Colors.grey[400]),
+              icon: Icon(Icons.chevron_left, size: 20, color: yptGrey400(context)),
               onPressed: () =>
                   _pick(_selected.subtract(const Duration(days: 7))),
             ),
             IconButton(
               visualDensity: VisualDensity.compact,
-              icon: Icon(Icons.chevron_right, size: 20, color: Colors.grey[400]),
+              icon: Icon(Icons.chevron_right, size: 20, color: yptGrey400(context)),
               onPressed: () => _pick(_selected.add(const Duration(days: 7))),
             ),
           ],
@@ -148,7 +148,7 @@ class _PlannerViewState extends State<PlannerView> {
                           fontSize: 11,
                           color: AppState.dateStr(d) == _key
                               ? Theme.of(context).colorScheme.onSurface
-                              : Colors.grey[500],
+                              : yptGrey500(context),
                           fontWeight: AppState.dateStr(d) == _key
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -178,7 +178,7 @@ class _PlannerViewState extends State<PlannerView> {
           Text(
             'Total ${_detail!.totalMs > 0 ? fmtMs(_detail!.totalMs) : '0:00:00'}'
             '${_detail!.sessions.isEmpty ? '' : ' · ${_detail!.sessions.length} sessions'}',
-            style: TextStyle(color: Colors.grey[500], fontSize: 12.5),
+            style: TextStyle(color: yptGrey500(context), fontSize: 12.5),
           ),
         const SizedBox(height: 6),
         Divider(height: 1, color: _hairOf(context)),
@@ -190,13 +190,13 @@ class _PlannerViewState extends State<PlannerView> {
               children: [
                 Expanded(
                   child: Text(st.plannerNotice!,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+                      style: TextStyle(fontSize: 12, color: yptGrey400(context))),
                 ),
                 const SizedBox(width: 8),
                 InkWell(
                   onTap: st.dismissPlannerNotice,
                   borderRadius: BorderRadius.circular(10),
-                  child: Icon(Icons.close, size: 15, color: Colors.grey[600]),
+                  child: Icon(Icons.close, size: 15, color: yptGrey600(context)),
                 ),
               ],
             ),
@@ -205,7 +205,7 @@ class _PlannerViewState extends State<PlannerView> {
         ..._todoSection(st),
         const SizedBox(height: 18),
         Text('Tasks tagged YPT sync with the official app — tap a circle to set Done, Half-done, or Not done.',
-            style: TextStyle(fontSize: 10.5, color: Colors.grey[600])),
+            style: TextStyle(fontSize: 10.5, color: yptGrey600(context))),
       ],
     );
   }
@@ -232,7 +232,7 @@ class _PlannerViewState extends State<PlannerView> {
         child: (selected || allDone)
             ? const Icon(Icons.check, size: 14, color: kBrand)
             : Text('–',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                style: TextStyle(color: yptGrey600(context), fontSize: 12)),
       ),
     );
   }
@@ -281,7 +281,7 @@ class _PlannerViewState extends State<PlannerView> {
             (serverGroups['']?.isNotEmpty ?? false) ||
             _addingSubject == '')
           _group(st, key,
-              color: key == '' ? Colors.grey : _colorFor(st, key),
+              color: key == '' ? yptGrey500(context) : _colorFor(st, key),
               local: localGroups[key] ?? const [],
               server: serverGroups[key] ?? const []),
     ];
@@ -319,7 +319,7 @@ class _PlannerViewState extends State<PlannerView> {
                 child: Icon(
                     adding ? Icons.remove_circle_outline : Icons.add_circle_outline,
                     size: 19,
-                    color: Colors.grey[400]),
+                    color: yptGrey400(context)),
               ),
             ],
           ),
@@ -350,7 +350,7 @@ class _PlannerViewState extends State<PlannerView> {
               style: const TextStyle(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Add a task…',
-                hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                hintStyle: TextStyle(color: yptGrey600(context), fontSize: 14),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 enabledBorder: UnderlineInputBorder(
@@ -410,14 +410,14 @@ class _PlannerViewState extends State<PlannerView> {
       child: Row(
         children: [
           Icon(icon,
-              size: 18, color: selected ? kBrand : Colors.grey[400]),
+              size: 18, color: selected ? kBrand : yptGrey400(context)),
           const SizedBox(width: 10),
           Text(label,
               style: TextStyle(
                   fontSize: 14,
                   fontWeight:
                       selected ? FontWeight.bold : FontWeight.normal,
-                  color: selected ? kBrand : Colors.grey[100])),
+                  color: selected ? kBrand : yptGrey100(context))),
         ],
       ),
     );
@@ -471,19 +471,19 @@ class _PlannerViewState extends State<PlannerView> {
               text,
               style: TextStyle(
                 fontSize: 14,
-                color: isDone ? Colors.grey[500] : Colors.grey[100],
+                color: isDone ? yptGrey500(context) : yptGrey100(context),
               ),
             ),
           ),
           if (server)
             Text('YPT',
-                style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                style: TextStyle(fontSize: 10, color: yptGrey600(context))),
           if (onDelete != null) ...[
             if (server) const SizedBox(width: 8),
             InkWell(
               onTap: onDelete,
               borderRadius: BorderRadius.circular(10),
-              child: Icon(Icons.close, size: 15, color: Colors.grey[600]),
+              child: Icon(Icons.close, size: 15, color: yptGrey600(context)),
             ),
           ],
         ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey400, yptGrey500;
 import '../models.dart';
 import 'timer_view.dart' show fmtMs;
 
@@ -130,7 +130,7 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
                 if (category.isNotEmpty)
                   Text(category,
                       style:
-                          TextStyle(color: Colors.grey[400], fontSize: 12)),
+                          TextStyle(color: yptGrey400(context), fontSize: 12)),
               ],
             ),
           ),
@@ -149,7 +149,7 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
                   const SizedBox(height: 24),
                   Text('Could not load rankings',
                       style:
-                          TextStyle(color: Colors.grey[500], fontSize: 12)),
+                          TextStyle(color: yptGrey500(context), fontSize: 12)),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: _load,
@@ -164,7 +164,7 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 24),
                 child: Text('No rankings for this period.',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    style: TextStyle(color: yptGrey500(context), fontSize: 12)),
               ),
             )
           else

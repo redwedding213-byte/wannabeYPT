@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor, yptCard2Color;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey100, yptGrey300, yptGrey400, yptGrey500, yptGrey600, yptHairline, yptDivider;
 import '../models.dart';
 import 'avatar_store_view.dart';
 import 'challenges_view.dart';
@@ -130,7 +130,7 @@ class _TimerViewState extends State<TimerView> {
         Text(
           left > 0 ? '${fmtMs(left)} to goal' : 'Goal reached',
           style: TextStyle(
-              color: Colors.grey[500],
+              color: yptGrey500(context),
               fontSize: 11,
               fontFeatures: const [FontFeature.tabularFigures()]),
         ),
@@ -176,9 +176,9 @@ class _TimerViewState extends State<TimerView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('TOTAL TODAY',
+                    Text('TOTAL TODAY',
                         style: TextStyle(
-                            color: Colors.grey,
+                            color: yptGrey500(context),
                             fontSize: 11,
                             letterSpacing: 1.5,
                             fontWeight: FontWeight.w600)),
@@ -194,7 +194,7 @@ class _TimerViewState extends State<TimerView> {
                       child: st.studying
                           ? Text(fmtAgo(st.elapsed),
                               style: TextStyle(
-                                  color: Colors.grey[500],
+                                  color: yptGrey500(context),
                                   fontSize: 11.5,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
@@ -204,7 +204,7 @@ class _TimerViewState extends State<TimerView> {
                                   fmtAgo(
                                       DateTime.now().difference(_lastEnd!)),
                                   style: TextStyle(
-                                      color: Colors.grey[500],
+                                      color: yptGrey500(context),
                                       fontSize: 11.5,
                                       fontFeatures: const [
                                         FontFeature.tabularFigures()
@@ -240,7 +240,7 @@ class _TimerViewState extends State<TimerView> {
                     Tooltip(
                       message: "Today's total study time (resets at 5:00 AM)",
                       child: Icon(Icons.help_outline_rounded,
-                          size: 15, color: Colors.grey[500]),
+                          size: 15, color: yptGrey500(context)),
                     ),
                   ],
                 ),
@@ -251,7 +251,7 @@ class _TimerViewState extends State<TimerView> {
                       ? Text(fmtAgo(st.elapsed),
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                              color: Colors.grey[500],
+                              color: yptGrey500(context),
                               fontSize: 11.5,
                               fontFeatures: const [
                                 FontFeature.tabularFigures()
@@ -262,7 +262,7 @@ class _TimerViewState extends State<TimerView> {
                                   DateTime.now().difference(_lastEnd!)),
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: Colors.grey[500],
+                                  color: yptGrey500(context),
                                   fontSize: 11.5,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures()
@@ -359,7 +359,7 @@ class _TimerViewState extends State<TimerView> {
                           children: [
                             Text('No subjects loaded',
                                 style: TextStyle(
-                                    color: Colors.grey[600], fontSize: 13)),
+                                    color: yptGrey600(context), fontSize: 13)),
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: () =>
@@ -385,11 +385,11 @@ class _TimerViewState extends State<TimerView> {
                           subject: user.subjects[i], compact: _compact),
                       _todayTasks(st, user.subjects[i]),
                       if (i < user.subjects.length - 1)
-                        const Divider(
+                        Divider(
                             height: 1,
                             indent: 60,
                             endIndent: 16,
-                            color: Color(0x0DFFFFFF)),
+                            color: yptHairline(context)),
                     ],
                     const SizedBox(height: 18),
                     // Edit subject pill — flows under the rows, like the official app.
@@ -410,12 +410,12 @@ class _TimerViewState extends State<TimerView> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.edit_outlined,
-                                    size: 13, color: Colors.grey[400]),
+                                    size: 13, color: yptGrey400(context)),
                                 const SizedBox(width: 6),
                                 Text('Edit subject',
                                     style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey[300])),
+                                        color: yptGrey300(context))),
                               ],
                             ),
                           ),
@@ -473,14 +473,14 @@ class _TimerViewState extends State<TimerView> {
       child: Row(
         children: [
           Icon(icon,
-              size: 18, color: selected ? kBrand : Colors.grey[400]),
+              size: 18, color: selected ? kBrand : yptGrey400(context)),
           const SizedBox(width: 10),
           Text(label,
               style: TextStyle(
                   fontSize: 14,
                   fontWeight:
                       selected ? FontWeight.bold : FontWeight.normal,
-                  color: selected ? kBrand : Colors.grey[100])),
+                  color: selected ? kBrand : yptGrey100(context))),
         ],
       ),
     );
@@ -530,7 +530,7 @@ class _TimerViewState extends State<TimerView> {
               child: Text(t.title,
                   style: TextStyle(
                       fontSize: 12.5,
-                      color: isDone ? Colors.grey[600] : Colors.grey[400])),
+                      color: isDone ? yptGrey600(context) : yptGrey400(context))),
             ),
           ],
         ),
@@ -559,7 +559,7 @@ class _TimerViewState extends State<TimerView> {
                 child: Text(text,
                     style: TextStyle(
                         fontSize: 12.5,
-                        color: done ? Colors.grey[600] : Colors.grey[400])),
+                        color: done ? yptGrey600(context) : yptGrey400(context))),
               ),
             ],
           ),
@@ -612,7 +612,7 @@ class _TimerViewState extends State<TimerView> {
             child: Text(
               DateFormat('EEE, M/d').format(now),
               style: TextStyle(
-                color: Colors.grey[400],
+                color: yptGrey400(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -626,13 +626,13 @@ class _TimerViewState extends State<TimerView> {
                 IconButton(
                   tooltip: _compact ? 'Comfortable rows' : 'Compact rows',
                   icon: const Icon(Icons.view_sidebar_outlined, size: 20),
-                  color: Colors.grey[300],
+                  color: yptGrey300(context),
                   onPressed: () => setState(() => _compact = !_compact),
                 ),
                 IconButton(
                   tooltip: 'Features',
                   icon: const Icon(Icons.grid_view, size: 21),
-                  color: Colors.grey[300],
+                  color: yptGrey300(context),
                   onPressed: () => _showGridMenu(context),
                 ),
               ],
@@ -670,7 +670,7 @@ class _TimerViewState extends State<TimerView> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 14,
-                      color: activeTab ? Theme.of(context).colorScheme.onSurface : Colors.grey[500],
+                      color: activeTab ? Theme.of(context).colorScheme.onSurface : yptGrey500(context),
                       fontWeight:
                           activeTab ? FontWeight.w600 : FontWeight.w400)),
               const SizedBox(height: 7),
@@ -691,8 +691,8 @@ class _TimerViewState extends State<TimerView> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.only(bottom: 7),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x14FFFFFF))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: yptDivider(context))),
       ),
       child: Row(
         children: [
@@ -922,7 +922,7 @@ class _TimerViewState extends State<TimerView> {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: Colors.grey[500],
+          color: yptGrey500(context),
           letterSpacing: 0.3,
         ),
       ),
@@ -938,7 +938,7 @@ class _TimerViewState extends State<TimerView> {
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Row(
           children: [
-            Icon(icon, size: 15, color: color ?? Colors.grey[300]),
+            Icon(icon, size: 15, color: color ?? yptGrey300(context)),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -980,12 +980,12 @@ class _TimerViewState extends State<TimerView> {
       builder: (_) => AlertDialog(
         backgroundColor: yptCardColor(context),
         title: const Text('wannabeYPT Help', style: TextStyle(fontSize: 16)),
-        content: const Text(
+        content: Text(
           'wannabeYPT is an unofficial YPT client tailored for laptop/PC study.\n\n'
           '• Timers sync with your YPT account in real time.\n'
           '• Close guard protects your session if you close the tab.\n'
           '• Support / Feedback: Telegram @wannabeypt',
-          style: TextStyle(fontSize: 13, color: Colors.grey),
+          style: TextStyle(fontSize: 13, color: yptGrey500(context)),
         ),
         actions: [
           TextButton(
@@ -1039,9 +1039,9 @@ class _TimerViewState extends State<TimerView> {
       builder: (_) => AlertDialog(
         backgroundColor: yptCardColor(context),
         title: const Text('D-Day', style: TextStyle(fontSize: 16)),
-        content: const Text(
+        content: Text(
             'A countdown chip for your target date (exam day, for example). Stored on this device only.',
-            style: TextStyle(fontSize: 13, color: Colors.grey)),
+            style: TextStyle(fontSize: 13, color: yptGrey500(context))),
         actions: [
           if (current != null)
             TextButton(
@@ -1187,12 +1187,12 @@ class _SubjectRow extends StatelessWidget {
               ),
               Text(fmtMs(liveMs),
                   style: TextStyle(
-                      color: active ? s.color : Colors.grey[300],
+                      color: active ? s.color : yptGrey300(context),
                       fontWeight: active ? FontWeight.bold : FontWeight.normal,
                       fontFeatures: const [FontFeature.tabularFigures()])),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: Icon(Icons.more_vert, size: 17, color: Colors.grey[500]),
+                icon: Icon(Icons.more_vert, size: 17, color: yptGrey500(context)),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SubjectsPage()),
                 ),
@@ -1246,7 +1246,7 @@ class _PomoNoticeBanner extends StatelessWidget {
             ),
             InkWell(
               onTap: () => context.read<AppState>().dismissPomoNotice(),
-              child: const Icon(Icons.close, size: 18, color: Colors.grey),
+              child: Icon(Icons.close, size: 18, color: yptGrey500(context)),
             ),
           ],
         ),
@@ -1324,11 +1324,11 @@ class _PomoPanel extends StatelessWidget {
               label: const Text('Enable end notifications'),
             )
           else if (st.notifyPerm == 'denied')
-            const Padding(
-              padding: EdgeInsets.only(top: 4),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
               child: Text(
                   'Notifications are blocked in the browser — the banner and beep will still alert you.',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  style: TextStyle(fontSize: 11, color: yptGrey500(context))),
             ),
         ],
       ),
@@ -1411,15 +1411,15 @@ class _PomoPanel extends StatelessWidget {
                   fontSize: 27,
                   fontWeight: FontWeight.w300,
                   fontFeatures: [FontFeature.tabularFigures()])),
-          const Text('Tap a subject to skip the break',
-              style: TextStyle(fontSize: 11, color: Colors.grey)),
+          Text('Tap a subject to skip the break',
+              style: TextStyle(fontSize: 11, color: yptGrey500(context))),
         ],
       );
     }
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 2),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text('Pomodoro ready — tap a subject to start a focus round',
-          style: TextStyle(fontSize: 12, color: Colors.grey)),
+          style: TextStyle(fontSize: 12, color: yptGrey500(context))),
     );
   }
 
@@ -1444,7 +1444,7 @@ class _PomoPanel extends StatelessWidget {
           ),
         const SizedBox(width: 8),
         Text('$filled/$n rounds done',
-            style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+            style: TextStyle(fontSize: 11, color: yptGrey400(context))),
       ],
     );
   }
@@ -1458,10 +1458,10 @@ class _PomoPanel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) ...[
-          Icon(icon, size: 13, color: Colors.grey),
+          Icon(icon, size: 13, color: yptGrey500(context)),
           const SizedBox(width: 3),
         ],
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 12, color: yptGrey500(context))),
         IconButton(
           visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.remove_circle_outline, size: 19),

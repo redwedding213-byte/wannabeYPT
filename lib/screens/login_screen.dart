@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand;
+import '../main.dart' show kBrand, yptGrey500, yptGrey600;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 2),
                 Center(
                     child: Text('Yeolpumta, in your browser',
-                        style: TextStyle(color: Colors.grey[500]))),
+                        style: TextStyle(color: yptGrey500(context)))),
                 const SizedBox(height: 36),
                 TextField(
                   controller: _email,
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text('or',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        style: TextStyle(color: yptGrey600(context), fontSize: 12)),
                   ),
                   Expanded(child: Divider(color: Colors.grey[800])),
                 ]),

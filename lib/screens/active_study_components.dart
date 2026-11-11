@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCard2Color;
+import '../main.dart' show kBrand, yptCard2Color, yptGrey300, yptGrey400, yptGrey500;
 import '../models.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
@@ -352,7 +352,7 @@ class _BreakLogDialogState extends State<BreakLogDialog> {
                   Tooltip(
                     message: 'Record your break reason',
                     child: Icon(Icons.help_outline,
-                        size: 15, color: Colors.grey[500]),
+                        size: 15, color: yptGrey500(context)),
                   ),
                 ],
               ),
@@ -397,7 +397,7 @@ class _BreakLogDialogState extends State<BreakLogDialog> {
                           fontSize: 12.5,
                           fontWeight:
                               isSel ? FontWeight.bold : FontWeight.w500,
-                          color: isSel ? kBrand : Colors.grey[300],
+                          color: isSel ? kBrand : yptGrey300(context),
                         ),
                       ),
                     ),
@@ -418,7 +418,7 @@ class _BreakLogDialogState extends State<BreakLogDialog> {
                       );
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.grey[400],
+                      foregroundColor: yptGrey400(context),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
                     child: const Text('Edit tags',
@@ -477,11 +477,13 @@ class StudyBottomDock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _dockItem(
+              context,
               icon: Icons.home,
               label: 'Home',
               onTap: onHome ?? () => TabBus.index.value = 0,
             ),
             _dockItem(
+              context,
               icon: Icons.check_box_outlined,
               label: 'To-Do',
               onTap: () {
@@ -490,6 +492,7 @@ class StudyBottomDock extends StatelessWidget {
               },
             ),
             _dockItem(
+              context,
               icon: Icons.calendar_today_outlined,
               label: 'Calendar',
               onTap: () {
@@ -499,6 +502,7 @@ class StudyBottomDock extends StatelessWidget {
               },
             ),
             _dockItem(
+              context,
               icon: Icons.menu_book_outlined,
               label: 'Books',
               onTap: () {
@@ -521,11 +525,11 @@ class StudyBottomDock extends StatelessWidget {
                     backgroundColor: yptCard2Color(context),
                     title: const Text('Study Mode',
                         style: TextStyle(fontSize: 16)),
-                    content: const Text(
+                    content: Text(
                       '• Active session syncs live with YPT servers.\n'
                       '• Tap the pause icon to take a break and log your tag.\n'
                       '• Use the swap icon at the top to change subject.',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                      style: TextStyle(fontSize: 13, color: yptGrey500(context)),
                     ),
                     actions: [
                       TextButton(
@@ -541,8 +545,8 @@ class StudyBottomDock extends StatelessWidget {
                 width: 30,
                 height: 30,
                 alignment: Alignment.center,
-                child: const Icon(Icons.help_outline,
-                    size: 17, color: Colors.grey),
+                child: Icon(Icons.help_outline,
+                    size: 17, color: yptGrey500(context)),
               ),
             ),
           ],
@@ -551,7 +555,8 @@ class StudyBottomDock extends StatelessWidget {
     );
   }
 
-  Widget _dockItem({
+  Widget _dockItem(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -564,14 +569,14 @@ class StudyBottomDock extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: Colors.grey[300]),
+            Icon(icon, size: 18, color: yptGrey300(context)),
             const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[400],
+                color: yptGrey400(context),
               ),
             ),
           ],
@@ -637,7 +642,7 @@ void showYptFeaturesMenu(BuildContext context) {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _yptCategoryTitle('Main features'),
+                          _yptCategoryTitle(context, 'Main features'),
                           _yptMenuItem(
                             dlgCtx,
                             Icons.bar_chart_outlined,
@@ -680,7 +685,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           const SizedBox(height: 18),
-                          _yptCategoryTitle('Goals & Target'),
+                          _yptCategoryTitle(context, 'Goals & Target'),
                           _yptMenuItem(
                             dlgCtx,
                             Icons.flag_outlined,
@@ -712,7 +717,7 @@ void showYptFeaturesMenu(BuildContext context) {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _yptCategoryTitle('Extra features'),
+                          _yptCategoryTitle(context, 'Extra features'),
                           _yptMenuItem(
                             dlgCtx,
                             Icons.menu_book_outlined,
@@ -762,7 +767,7 @@ void showYptFeaturesMenu(BuildContext context) {
                             },
                           ),
                           const SizedBox(height: 18),
-                          _yptCategoryTitle('More'),
+                          _yptCategoryTitle(context, 'More'),
                           _yptMenuItem(
                             dlgCtx,
                             Icons.help_outline,
@@ -796,7 +801,7 @@ void showYptFeaturesMenu(BuildContext context) {
   );
 }
 
-Widget _yptCategoryTitle(String title) {
+Widget _yptCategoryTitle(BuildContext context, String title) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 6),
     child: Text(
@@ -804,7 +809,7 @@ Widget _yptCategoryTitle(String title) {
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: Colors.grey[500],
+        color: yptGrey500(context),
         letterSpacing: 0.3,
       ),
     ),
@@ -821,7 +826,7 @@ Widget _yptMenuItem(BuildContext context, IconData icon, String label,
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Row(
         children: [
-          Icon(icon, size: 15, color: color ?? Colors.grey[300]),
+          Icon(icon, size: 15, color: color ?? yptGrey300(context)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -891,9 +896,9 @@ Future<void> _yptEditDday(BuildContext context, AppState st) async {
     builder: (_) => AlertDialog(
       backgroundColor: yptCard2Color(context),
       title: const Text('D-Day', style: TextStyle(fontSize: 16)),
-      content: const Text(
+      content: Text(
         'A countdown chip for your target date (exam day, for example).',
-        style: TextStyle(fontSize: 13, color: Colors.grey),
+        style: TextStyle(fontSize: 13, color: yptGrey500(context)),
       ),
       actions: [
         if (current != null)
@@ -985,12 +990,12 @@ void _yptHelpDialog(BuildContext context) {
     builder: (_) => AlertDialog(
       backgroundColor: yptCard2Color(context),
       title: const Text('wannabeYPT Help', style: TextStyle(fontSize: 16)),
-      content: const Text(
+      content: Text(
         'wannabeYPT is an unofficial YPT client tailored for laptop/PC study.\n\n'
         '• Timers sync with your YPT account in real time.\n'
         '• Close guard protects your session if you close the tab.\n'
         '• Support / Feedback: Telegram @wannabeypt',
-        style: TextStyle(fontSize: 13, color: Colors.grey),
+        style: TextStyle(fontSize: 13, color: yptGrey500(context)),
       ),
       actions: [
         TextButton(

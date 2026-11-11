@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey400, yptGrey500, yptGrey600;
 import '../models.dart';
 import 'timer_view.dart';
 import 'planner_view.dart';
@@ -212,10 +212,10 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Wanna say something?',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: yptGrey500(context)),
               ),
             ),
             TextButton(
@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _bannerFollowUp = false;
                 });
               },
-              style: _tinyButtonStyle(Colors.grey),
+              style: _tinyButtonStyle(yptGrey500(context)),
               child: const Text('NO',
                   style: TextStyle(
                       fontSize: 12,
@@ -257,10 +257,10 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
               'Using wannabeYPT?',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: yptGrey500(context)),
             ),
           ),
           TextButton(
@@ -331,14 +331,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(_tab == i ? items[i].$2 : items[i].$1,
                             size: 21,
                             color:
-                                _tab == i ? Theme.of(context).colorScheme.onSurface : Colors.grey[500]),
+                                _tab == i ? Theme.of(context).colorScheme.onSurface : yptGrey500(context)),
                         const SizedBox(height: 2),
                         Text(items[i].$3,
                             style: TextStyle(
                                 fontSize: 10,
                                 color: _tab == i
                                     ? Theme.of(context).colorScheme.onSurface
-                                    : Colors.grey[500],
+                                    : yptGrey500(context),
                                 fontWeight: _tab == i
                                     ? FontWeight.w700
                                     : FontWeight.w500)),
@@ -369,7 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Icon(
                 _tab == 3 ? Icons.group_add_outlined : Icons.question_mark,
                 size: 19,
-                color: Colors.grey[400]),
+                color: yptGrey400(context)),
           ),
         ),
       ],
@@ -386,17 +386,17 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
                 'Unofficial web client for YPT (Yeolpumta). Everything syncs with your own YPT account — timers started here show up in the official app, and the other way round.',
-                style: TextStyle(fontSize: 13, color: Colors.grey)),
+                style: TextStyle(fontSize: 13, color: yptGrey500(context))),
             const SizedBox(height: 10),
             StatefulBuilder(
               builder: (dialogCtx, setDialogState) {
                 final st = dialogCtx.read<AppState>();
                 return Row(
                   children: [
-                    const Icon(Icons.light_mode_outlined,
-                        size: 18, color: Colors.grey),
+                    Icon(Icons.light_mode_outlined,
+                        size: 18, color: yptGrey500(context)),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text('White mode',
@@ -420,8 +420,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 final st = dialogCtx.read<AppState>();
                 return Row(
                   children: [
-                    const Icon(Icons.videogame_asset_outlined,
-                        size: 18, color: Colors.grey),
+                    Icon(Icons.videogame_asset_outlined,
+                        size: 18, color: yptGrey500(context)),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text('Discord activity',
@@ -439,24 +439,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-            const Text(
+            Text(
                 'Experimental: shows your study subject on Discord when Discord is running on this machine. Needs a Discord app set up first.',
-                style: TextStyle(fontSize: 11.5, color: Colors.grey)),
+                style: TextStyle(fontSize: 11.5, color: yptGrey500(context))),
             const SizedBox(height: 6),
             const Text('From the developer',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            const SelectableText('Telegram: @wannabeypt',
-                style: TextStyle(fontSize: 13, color: Colors.grey)),
-            const SelectableText('Email: redwedding213@gmail.com',
-                style: TextStyle(fontSize: 13, color: Colors.grey)),
+            SelectableText('Telegram: @wannabeypt',
+                style: TextStyle(fontSize: 13, color: yptGrey500(context))),
+            SelectableText('Email: redwedding213@gmail.com',
+                style: TextStyle(fontSize: 13, color: yptGrey500(context))),
             const SizedBox(height: 10),
             const Text('Recent updates',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
-            const Text(
+            Text(
                 '• Oct 24 Break counter now starts from your last session.',
-                style: TextStyle(fontSize: 12.5, color: Colors.grey)),
+                style: TextStyle(fontSize: 12.5, color: yptGrey500(context))),
           ],
         ),
         actions: [
@@ -522,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: InputDecoration(
                     hintText: 'What should we fix or add?',
                     hintStyle:
-                        TextStyle(color: Colors.grey[600], fontSize: 13.5),
+                        TextStyle(color: yptGrey600(context), fontSize: 13.5),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(
@@ -543,7 +543,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     hintText:
                         'How to reach you (optional) — email or Telegram name',
                     hintStyle:
-                        TextStyle(color: Colors.grey[600], fontSize: 12.5),
+                        TextStyle(color: yptGrey600(context), fontSize: 12.5),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(

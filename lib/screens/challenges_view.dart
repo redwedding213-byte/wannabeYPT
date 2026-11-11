@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey500;
 import '../models.dart';
 import '../ypt_api.dart';
 
@@ -170,12 +170,12 @@ class _ChallengesPageState extends State<ChallengesPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(challenge.description,
-                style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                style: TextStyle(color: yptGrey500(context), fontSize: 13)),
             if (challenge.rules.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(challenge.rules,
                   style:
-                      const TextStyle(color: Colors.grey, fontSize: 12)),
+                      TextStyle(color: yptGrey500(context), fontSize: 12)),
             ],
             const SizedBox(height: 12),
             Text(
@@ -189,7 +189,7 @@ class _ChallengesPageState extends State<ChallengesPage>
             Text(
               'Goal: ${(challenge.successThreshold * 100).toInt()}% of days · '
               '${_dateRange(challenge)}',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: yptGrey500(context), fontSize: 12),
             ),
           ],
         ),
@@ -229,9 +229,9 @@ class _ChallengesPageState extends State<ChallengesPage>
         backgroundColor: yptCardColor(context),
         title: Text('Leave: ${challenge.name}',
             style: const TextStyle(fontSize: 16)),
-        content: const Text(
+        content: Text(
           'Your progress in this challenge will be lost.',
-          style: TextStyle(color: Colors.grey, fontSize: 13),
+          style: TextStyle(color: yptGrey500(context), fontSize: 13),
         ),
         actions: [
           TextButton(
@@ -317,7 +317,7 @@ class _ChallengesPageState extends State<ChallengesPage>
             const SizedBox(height: 6),
             Text(
               c.description,
-              style: const TextStyle(color: Colors.grey, fontSize: 12.5),
+              style: TextStyle(color: yptGrey500(context), fontSize: 12.5),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -334,22 +334,22 @@ class _ChallengesPageState extends State<ChallengesPage>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(c.type,
-                      style: const TextStyle(
-                          color: Colors.grey, fontSize: 11)),
+                      style: TextStyle(
+                          color: yptGrey500(context), fontSize: 11)),
                 ),
                 const SizedBox(width: 8),
               ],
-              const Icon(Icons.calendar_today,
-                  size: 13, color: Colors.grey),
+              Icon(Icons.calendar_today,
+                  size: 13, color: yptGrey500(context)),
               const SizedBox(width: 4),
               Text(_dateRange(c),
-                  style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                  style: TextStyle(color: yptGrey500(context), fontSize: 11)),
               const Spacer(),
-              const Icon(Icons.people_outline,
-                  size: 13, color: Colors.grey),
+              Icon(Icons.people_outline,
+                  size: 13, color: yptGrey500(context)),
               const SizedBox(width: 4),
               Text('${c.participantCount}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                  style: TextStyle(color: yptGrey500(context), fontSize: 11)),
             ],
           ),
           if (isMine || c.isJoined) ...[
@@ -357,8 +357,8 @@ class _ChallengesPageState extends State<ChallengesPage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Progress',
-                    style: TextStyle(color: Colors.grey, fontSize: 11)),
+                Text('Progress',
+                    style: TextStyle(color: yptGrey500(context), fontSize: 11)),
                 Text('${(progress * 100).toInt()}%',
                     style: const TextStyle(
                         color: kBrand,
@@ -379,7 +379,7 @@ class _ChallengesPageState extends State<ChallengesPage>
             const SizedBox(height: 4),
             Text(
               'Goal: ${(c.successThreshold * 100).toInt()}% of days',
-              style: const TextStyle(color: Colors.grey, fontSize: 11),
+              style: TextStyle(color: yptGrey500(context), fontSize: 11),
             ),
           ],
           const SizedBox(height: 12),
@@ -416,14 +416,14 @@ class _ChallengesPageState extends State<ChallengesPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.emoji_events_outlined,
-                size: 56, color: Colors.grey),
+            Icon(Icons.emoji_events_outlined,
+                size: 56, color: yptGrey500(context)),
             const SizedBox(height: 14),
             Text(
               isMine
                   ? 'You have not joined any challenge yet.'
                   : 'No challenges available right now.',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: yptGrey500(context), fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ],
@@ -477,7 +477,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                   ),
                   child: Text(log.type,
                       style:
-                          const TextStyle(color: Colors.grey, fontSize: 11)),
+                          TextStyle(color: yptGrey500(context), fontSize: 11)),
                 ),
               ],
             ],
@@ -486,7 +486,7 @@ class _ChallengesPageState extends State<ChallengesPage>
             const SizedBox(height: 4),
             Text(
               log.description,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: yptGrey500(context), fontSize: 12),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -496,15 +496,15 @@ class _ChallengesPageState extends State<ChallengesPage>
             children: [
               if (when.isNotEmpty)
                 Text(when,
-                    style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                    style: TextStyle(color: yptGrey500(context), fontSize: 11)),
               if (log.groupTitle.isNotEmpty) ...[
                 const SizedBox(width: 8),
-                const Icon(Icons.group, size: 12, color: Colors.grey),
+                Icon(Icons.group, size: 12, color: yptGrey500(context)),
                 const SizedBox(width: 3),
                 Expanded(
                   child: Text(log.groupTitle,
                       style:
-                          const TextStyle(color: Colors.grey, fontSize: 11),
+                          TextStyle(color: yptGrey500(context), fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ),
@@ -537,8 +537,8 @@ class _ChallengesPageState extends State<ChallengesPage>
             Text(_logsError!,
                 style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
           if (_logsError == null && _myLogs.isEmpty)
-            const Text('No challenge logs in the last 7 days.',
-                style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text('No challenge logs in the last 7 days.',
+                style: TextStyle(color: yptGrey500(context), fontSize: 12)),
           if (_logsError == null)
             ..._myLogs.map((l) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -554,16 +554,16 @@ class _ChallengesPageState extends State<ChallengesPage>
           ),
           const SizedBox(height: 10),
           if (_groupForLogs == null)
-            const Text('Join a group to see group challenge logs.',
-                style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text('Join a group to see group challenge logs.',
+                style: TextStyle(color: yptGrey500(context), fontSize: 12)),
           if (_groupForLogs != null && _groupLogsError != null)
             Text(_groupLogsError!,
                 style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
           if (_groupForLogs != null &&
               _groupLogsError == null &&
               _groupLogs.isEmpty)
-            const Text('No group challenge logs today.',
-                style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text('No group challenge logs today.',
+                style: TextStyle(color: yptGrey500(context), fontSize: 12)),
           if (_groupForLogs != null && _groupLogsError == null)
             ..._groupLogs.map((l) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -591,7 +591,7 @@ class _ChallengesPageState extends State<ChallengesPage>
           controller: _tabs,
           indicatorColor: kBrand,
           labelColor: Theme.of(context).colorScheme.onSurface,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: yptGrey500(context),
           tabs: const [
             Tab(text: 'Available'),
             Tab(text: 'My challenges'),
@@ -608,13 +608,13 @@ class _ChallengesPageState extends State<ChallengesPage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.cloud_off_outlined,
-                            size: 48, color: Colors.grey),
+                        Icon(Icons.cloud_off_outlined,
+                            size: 48, color: yptGrey500(context)),
                         const SizedBox(height: 14),
                         Text(
                           _error ?? 'Could not load challenges.',
-                          style: const TextStyle(
-                              color: Colors.grey, fontSize: 13),
+                          style: TextStyle(
+                              color: yptGrey500(context), fontSize: 13),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),

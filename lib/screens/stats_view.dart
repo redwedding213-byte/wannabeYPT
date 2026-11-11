@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, yptCardColor, yptCard2Color;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey300, yptGrey400, yptGrey500, yptGrey600;
 import 'manual_log_dialog.dart';
 import 'timer_view.dart' show fmtMs;
 
@@ -203,10 +203,10 @@ class _StatsViewState extends State<StatsView> {
                           ? Colors.grey[700]
                           : isToday
                               ? kBrand
-                              : Colors.grey[300])),
+                              : yptGrey300(context))),
               const SizedBox(height: 1),
               Text(total > 0 ? fmtHM(total) : '',
-                  style: TextStyle(fontSize: 9, color: Colors.grey[400])),
+                  style: TextStyle(fontSize: 9, color: yptGrey400(context))),
             ],
           ),
         ),
@@ -248,7 +248,7 @@ class _StatsViewState extends State<StatsView> {
                   child: Center(
                     child: Text(w,
                         style:
-                            TextStyle(fontSize: 10.5, color: Colors.grey[500])),
+                            TextStyle(fontSize: 10.5, color: yptGrey500(context))),
                   ),
                 ))
             .toList(),
@@ -266,7 +266,7 @@ class _StatsViewState extends State<StatsView> {
       const SizedBox(height: 8),
       Row(
         children: [
-          Text('Less', style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+          Text('Less', style: TextStyle(fontSize: 10, color: yptGrey500(context))),
           const SizedBox(width: 5),
           for (final a in [0.10, 0.28, 0.46, 0.65])
             Container(
@@ -278,7 +278,7 @@ class _StatsViewState extends State<StatsView> {
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
-          Text('More', style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+          Text('More', style: TextStyle(fontSize: 10, color: yptGrey500(context))),
           const Spacer(),
           if (_monthLoading)
             const SizedBox(
@@ -288,7 +288,7 @@ class _StatsViewState extends State<StatsView> {
           const SizedBox(width: 8),
           Text(
               '${DateFormat('MMM').format(month)}: ${fmtHMSummary(monthTotal)}',
-              style: TextStyle(fontSize: 11.5, color: Colors.grey[400])),
+              style: TextStyle(fontSize: 11.5, color: yptGrey400(context))),
         ],
       ),
       const SizedBox(height: 20),
@@ -307,7 +307,7 @@ class _StatsViewState extends State<StatsView> {
         Center(
           child: _failed.contains(key)
               ? Text('Could not load this day',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12))
+                  style: TextStyle(color: yptGrey500(context), fontSize: 12))
               : const CircularProgressIndicator(),
         ),
       ];
@@ -421,10 +421,10 @@ class _StatsViewState extends State<StatsView> {
                 ),
                 const SizedBox(width: 10),
                 Text('${fmtMs(e.value)} · $pct%',
-                    style: const TextStyle(
-                        color: Colors.grey,
+                    style: TextStyle(
+                        color: yptGrey500(context),
                         fontSize: 12,
-                        fontFeatures: [FontFeature.tabularFigures()])),
+                        fontFeatures: const [FontFeature.tabularFigures()])),
               ],
             ),
           );
@@ -441,7 +441,7 @@ class _StatsViewState extends State<StatsView> {
       ] else if (detail.totalMs > 0) ...[
         const SizedBox(height: 14),
         Text('This day has totals, but the server sent no session detail.',
-            style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+            style: TextStyle(color: yptGrey500(context), fontSize: 12)),
       ],
     ];
   }
@@ -498,7 +498,7 @@ class _StatsViewState extends State<StatsView> {
     for (final s in st.user?.subjects ?? const <Subject>[]) {
       if (s.title.trim().toLowerCase() == norm) return s.color;
     }
-    return Colors.grey;
+    return yptGrey500(context);
   }
 
   /// 24 hour cells starting 05:00 (the official day grid runs 5 AM–4 AM).
@@ -541,7 +541,7 @@ class _StatsViewState extends State<StatsView> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: ['5 AM', '11 AM', '5 PM', '11 PM', '5 AM']
               .map((t) =>
-                  Text(t, style: TextStyle(fontSize: 9, color: Colors.grey[600])))
+                  Text(t, style: TextStyle(fontSize: 9, color: yptGrey600(context))))
               .toList(),
         ),
       ],
@@ -576,7 +576,7 @@ class _StatsViewState extends State<StatsView> {
                   Text(
                       '${DateFormat('h:mm a').format(s.start)} ~ ${DateFormat('h:mm a').format(s.end)}',
                       style:
-                          TextStyle(fontSize: 11, color: Colors.grey[500])),
+                          TextStyle(fontSize: 11, color: yptGrey500(context))),
                 ],
               ),
             ),
@@ -584,7 +584,7 @@ class _StatsViewState extends State<StatsView> {
                 style: const TextStyle(
                     fontSize: 12.5,
                     fontFeatures: [FontFeature.tabularFigures()])),
-            const Icon(Icons.more_vert, size: 16, color: Colors.grey),
+            Icon(Icons.more_vert, size: 16, color: yptGrey500(context)),
           ],
         ),
       ),
@@ -609,7 +609,7 @@ class _StatsViewState extends State<StatsView> {
             const SizedBox(height: 4),
             Text(
                 '${fmtMs(s.durationMs)} · ${DateFormat('h:mm a').format(s.start)} ~ ${DateFormat('h:mm a').format(s.end)}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12.5)),
+                style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
             const SizedBox(height: 14),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -668,7 +668,7 @@ class _StatsViewState extends State<StatsView> {
                 children: [
                   Text(totals[i] > 0 ? fmtHM(totals[i]) : '',
                       style:
-                          TextStyle(fontSize: 10, color: Colors.grey[400])),
+                          TextStyle(fontSize: 10, color: yptGrey400(context))),
                   const SizedBox(height: 5),
                   Container(
                     height: 110 * (totals[i] / maxMs),
@@ -683,10 +683,10 @@ class _StatsViewState extends State<StatsView> {
                   const SizedBox(height: 6),
                   Text(DateFormat('EEE').format(days[i]),
                       style:
-                          TextStyle(fontSize: 10.5, color: Colors.grey[400])),
+                          TextStyle(fontSize: 10.5, color: yptGrey400(context))),
                   Text(DateFormat('d').format(days[i]),
                       style:
-                          TextStyle(fontSize: 10.5, color: Colors.grey[500])),
+                          TextStyle(fontSize: 10.5, color: yptGrey500(context))),
                 ],
               ),
             ),
@@ -775,15 +775,15 @@ class _StatsViewState extends State<StatsView> {
               ),
               const SizedBox(width: 10),
               Text(fmtHM(weekTotals[i]),
-                  style: const TextStyle(
-                      color: Colors.grey,
-                      fontFeatures: [FontFeature.tabularFigures()])),
+                  style: TextStyle(
+                      color: yptGrey500(context),
+                      fontFeatures: const [FontFeature.tabularFigures()])),
             ],
           ),
         ),
       const SizedBox(height: 10),
       Text('Tip: switch to the Day tab and use the month arrows for other months.',
-          style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+          style: TextStyle(fontSize: 11, color: yptGrey600(context))),
     ];
   }
 
@@ -823,9 +823,9 @@ class _StatsViewState extends State<StatsView> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(DateFormat('MMM d').format(days.first),
-              style: TextStyle(fontSize: 10.5, color: Colors.grey[500])),
+              style: TextStyle(fontSize: 10.5, color: yptGrey500(context))),
           Text(DateFormat('MMM d').format(days.last),
-              style: TextStyle(fontSize: 10.5, color: Colors.grey[500])),
+              style: TextStyle(fontSize: 10.5, color: yptGrey500(context))),
         ],
       ),
       const SizedBox(height: 16),
@@ -938,7 +938,7 @@ class _StatsViewState extends State<StatsView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Could not load $year',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                  style: TextStyle(color: yptGrey500(context), fontSize: 12)),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => _loadYear(year),
@@ -1018,7 +1018,7 @@ class _StatsViewState extends State<StatsView> {
       return SizedBox(
         width: cell + gap,
         child:
-            Text(label, style: TextStyle(fontSize: 9, color: Colors.grey[500])),
+            Text(label, style: TextStyle(fontSize: 9, color: yptGrey500(context))),
       );
     }).toList();
     return [
@@ -1039,7 +1039,7 @@ class _StatsViewState extends State<StatsView> {
       const SizedBox(height: 16),
       if (_yearData.isEmpty)
         Text('No study data for $year yet.',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]))
+            style: TextStyle(fontSize: 12, color: yptGrey500(context)))
       else
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -1070,7 +1070,7 @@ class _StatsViewState extends State<StatsView> {
         ),
       const SizedBox(height: 8),
       Text('Tap a day to open its detail.',
-          style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+          style: TextStyle(fontSize: 11, color: yptGrey600(context))),
     ];
   }
 
@@ -1083,7 +1083,7 @@ class _StatsViewState extends State<StatsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 11.5)),
+          Text(label, style: TextStyle(color: yptGrey400(context), fontSize: 11.5)),
           const SizedBox(height: 4),
           Text(value,
               style: const TextStyle(

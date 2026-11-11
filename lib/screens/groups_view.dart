@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey500, yptGrey600;
 import 'group_room_screen.dart';
 
 class GroupsView extends StatefulWidget {
@@ -44,7 +44,7 @@ class _GroupsViewState extends State<GroupsView> {
               padding: const EdgeInsets.all(24),
               child: Center(
                   child: Text('No groups yet',
-                      style: TextStyle(color: Colors.grey[600]))),
+                      style: TextStyle(color: yptGrey600(context)))),
             )
           else
             ...st.joinedGroups.map((g) => _GroupCard(group: g, joined: true)),
@@ -95,7 +95,7 @@ class _GroupCard extends StatelessWidget {
                 '${group.owner}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey[500], fontSize: 12.5)),
+                style: TextStyle(color: yptGrey500(context), fontSize: 12.5)),
           ],
         ),
       ),
@@ -185,9 +185,9 @@ class _GroupSearchPageState extends State<GroupSearchPage> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: 'Search groups',
-                hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                hintStyle: TextStyle(color: yptGrey600(context), fontSize: 14),
                 prefixIcon:
-                    Icon(Icons.search, size: 20, color: Colors.grey[500]),
+                    Icon(Icons.search, size: 20, color: yptGrey500(context)),
                 filled: true,
                 fillColor: yptCardColor(context),
                 border: OutlineInputBorder(
@@ -205,11 +205,11 @@ class _GroupSearchPageState extends State<GroupSearchPage> {
                 : _failed
                     ? Center(
                         child: Text('Could not load groups',
-                            style: TextStyle(color: Colors.grey[500])))
+                            style: TextStyle(color: yptGrey500(context))))
                     : results.isEmpty
                         ? Center(
                             child: Text('No groups found',
-                                style: TextStyle(color: Colors.grey[500])))
+                                style: TextStyle(color: yptGrey500(context))))
                         : ListView.builder(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 16),

@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor;
+import '../main.dart' show kBrand, yptCardColor, yptGrey200, yptGrey300, yptGrey400, yptGrey500, yptGrey600;
 import '../models.dart';
 import 'timer_view.dart' show fmtMs;
 
@@ -139,7 +139,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
           TextButton(
             onPressed: () => Navigator.of(d).pop(false),
             child:
-                Text('Cancel', style: TextStyle(color: Colors.grey[400])),
+                Text('Cancel', style: TextStyle(color: yptGrey400(context))),
           ),
           TextButton(
             onPressed: () => Navigator.of(d).pop(true),
@@ -241,7 +241,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(0, 10, 10, 0),
               child: IconButton(
-                icon: Icon(Icons.close, size: 20, color: Colors.grey[400]),
+                icon: Icon(Icons.close, size: 20, color: yptGrey400(context)),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -280,7 +280,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                                   ? m.category
                                   : 'YPT member',
                               style: TextStyle(
-                                  color: Colors.grey[500], fontSize: 13)),
+                                  color: yptGrey500(context), fontSize: 13)),
                         ],
                       ),
                     ),
@@ -306,12 +306,12 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                     ] else
                       Text('Today',
                           style:
-                              TextStyle(color: Colors.grey[400], fontSize: 13)),
+                              TextStyle(color: yptGrey400(context), fontSize: 13)),
                     Text(fmtMs(displayMs),
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: live ? kBrand : Colors.grey[200],
+                            color: live ? kBrand : yptGrey200(context),
                             fontFeatures: const [
                               FontFeature.tabularFigures()
                             ])),
@@ -380,7 +380,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                             ? _fmtHM(_weekMs[AppState.dateStr(days[i])]!)
                             : '',
                         style: TextStyle(
-                            color: Colors.grey[400],
+                            color: yptGrey400(context),
                             fontSize: 11,
                             fontFeatures: const [
                               FontFeature.tabularFigures()
@@ -408,7 +408,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                         style: TextStyle(
                             color: days[i] == today
                                 ? Theme.of(context).colorScheme.onSurface
-                                : Colors.grey[500],
+                                : yptGrey500(context),
                             fontSize: 11.5,
                             fontWeight: days[i] == today
                                 ? FontWeight.w700
@@ -420,10 +420,10 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
         ),
         const SizedBox(height: 16),
         Text('Week total ${_fmtHM(weekTotal)}',
-            style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+            style: TextStyle(color: yptGrey400(context), fontSize: 13)),
         const SizedBox(height: 22),
         Text('Full history for other members is only in the official app.',
-            style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+            style: TextStyle(color: yptGrey600(context), fontSize: 12)),
       ],
     ];
   }
@@ -440,7 +440,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const Spacer(),
           Text(monthName,
-              style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+              style: TextStyle(color: yptGrey400(context), fontSize: 13)),
         ],
       ),
       const SizedBox(height: 12),
@@ -460,7 +460,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
         ..._subjectSplit(sel),
       ] else if (!_monthLoading)
         Text('No study recorded on this day.',
-            style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+            style: TextStyle(color: yptGrey500(context), fontSize: 13)),
     ];
   }
 
@@ -477,7 +477,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
     for (final l in labels) {
       cells.add(Center(
           child: Text(l,
-              style: TextStyle(color: Colors.grey[500], fontSize: 11))));
+              style: TextStyle(color: yptGrey500(context), fontSize: 11))));
     }
     for (var i = 0; i < offset; i++) {
       cells.add(const SizedBox());
@@ -510,7 +510,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
             children: [
               Text('$day',
                   style: TextStyle(
-                      color: future ? Colors.grey[700] : Colors.grey[300],
+                      color: future ? Colors.grey[700] : yptGrey300(context),
                       fontSize: 11.5,
                       fontWeight:
                           selected ? FontWeight.w700 : FontWeight.w400)),
@@ -647,7 +647,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                         Text(
                             '${_fmtHM(entries[i].value)} · ${(entries[i].value / total * 100).round()}%',
                             style: TextStyle(
-                                color: Colors.grey[400],
+                                color: yptGrey400(context),
                                 fontSize: 12.5,
                                 fontFeatures: const [
                                   FontFeature.tabularFigures()

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show yptCardColor;
+import '../main.dart' show yptCardColor, yptGrey400, yptGrey500, yptGrey600;
 import '../models.dart';
 
 /// Weekly timetable grid (read-only): the account's timetable
@@ -87,7 +87,7 @@ class _TimetablePageState extends State<TimetablePage> {
                     children: [
                       Text('Could not load timetable',
                           style: TextStyle(
-                              color: Colors.grey[500], fontSize: 12)),
+                              color: yptGrey500(context), fontSize: 12)),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: _load,
@@ -101,7 +101,7 @@ class _TimetablePageState extends State<TimetablePage> {
                   ? Center(
                       child: Text('No timetable set yet.',
                           style: TextStyle(
-                              color: Colors.grey[500], fontSize: 12)),
+                              color: yptGrey500(context), fontSize: 12)),
                     )
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -110,7 +110,7 @@ class _TimetablePageState extends State<TimetablePage> {
                         const SizedBox(height: 18),
                         Text('This view is read-only.',
                             style: TextStyle(
-                                fontSize: 11, color: Colors.grey[600])),
+                                fontSize: 11, color: yptGrey600(context))),
                         const SizedBox(height: 12),
                         for (final b in _blocks) _blockRow(b),
                       ],
@@ -151,7 +151,7 @@ class _TimetablePageState extends State<TimetablePage> {
                   child: Center(
                     child: Text(_hourLabel(h),
                         style: TextStyle(
-                            fontSize: 10, color: Colors.grey[500])),
+                            fontSize: 10, color: yptGrey500(context))),
                   ),
                 ),
             ],
@@ -229,7 +229,7 @@ class _TimetablePageState extends State<TimetablePage> {
           ),
           Text(
               '${_dayNames[b.dayOfWeek - 1]} · ${_hourLabel(b.startHour)} – ${_hourLabel(b.endHour)}',
-              style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+              style: TextStyle(color: yptGrey400(context), fontSize: 12)),
         ],
       ),
     );

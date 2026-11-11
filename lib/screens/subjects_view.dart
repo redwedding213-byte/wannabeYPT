@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
-import '../main.dart' show yptCardColor;
+import '../main.dart' show yptCardColor, yptGrey400, yptGrey500;
 import '../models.dart';
 import 'timer_view.dart' show fmtMs;
 
@@ -170,8 +170,8 @@ class _SubjectsPageState extends State<SubjectsPage> {
                 onChanged: (_) => setDialog(() {}),
               ),
               const SizedBox(height: 16),
-              const Text('Colour',
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('Colour',
+                  style: TextStyle(fontSize: 12, color: yptGrey500(context))),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 10,
@@ -275,7 +275,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
         title: const Text('Delete subject',
             style: TextStyle(fontSize: 16)),
         content: Text('Delete "${s.title}" permanently?',
-            style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            style: TextStyle(fontSize: 13, color: yptGrey500(context))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -328,7 +328,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
                     children: [
                       Text('Could not load subjects',
                           style: TextStyle(
-                              color: Colors.grey[500], fontSize: 12)),
+                              color: yptGrey500(context), fontSize: 12)),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: _load,
@@ -348,7 +348,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
                           style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[400])),
+                              color: yptGrey400(context))),
                       const SizedBox(height: 8),
                       for (final s in archived) _row(s),
                     ],
@@ -358,7 +358,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
                           padding: const EdgeInsets.only(top: 24),
                           child: Text('No subjects yet.',
                               style: TextStyle(
-                                  color: Colors.grey[500], fontSize: 12)),
+                                  color: yptGrey500(context), fontSize: 12)),
                         ),
                       ),
                   ],
@@ -388,18 +388,18 @@ class _SubjectsPageState extends State<SubjectsPage> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        color: s.archived ? Colors.grey[500] : null)),
+                        color: s.archived ? yptGrey500(context) : null)),
                 if (s.studyMs > 0)
                   Text('Today ${fmtMs(s.studyMs)}',
                       style:
-                          TextStyle(color: Colors.grey[500], fontSize: 11)),
+                          TextStyle(color: yptGrey500(context), fontSize: 11)),
               ],
             ),
           ),
           IconButton(
             tooltip: 'Edit',
             icon: const Icon(Icons.edit_outlined, size: 19),
-            color: Colors.grey[400],
+            color: yptGrey400(context),
             onPressed: _busy ? null : () => _editDialog(subject: s),
           ),
           IconButton(
@@ -407,7 +407,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
             icon: Icon(
                 s.archived ? Icons.unarchive_outlined : Icons.archive_outlined,
                 size: 19),
-            color: Colors.grey[400],
+            color: yptGrey400(context),
             onPressed: _busy ? null : () => _toggleArchive(s),
           ),
           IconButton(

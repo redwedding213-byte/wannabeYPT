@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show yptCardColor;
+import '../main.dart' show yptCardColor, yptGrey300, yptGrey400, yptGrey500;
 import '../models.dart';
 import '../ypt_api.dart' show YptApiException;
 import 'timer_view.dart' show fmtMs;
@@ -176,12 +176,12 @@ class _ManualLogDialogState extends State<ManualLogDialog> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.calendar_today_outlined,
-                        size: 13, color: Colors.grey[400]),
+                        size: 13, color: yptGrey400(context)),
                     const SizedBox(width: 7),
                     Text(
                       dateLabel,
                       style: TextStyle(
-                        color: Colors.grey[300],
+                        color: yptGrey300(context),
                         fontSize: 13,
                         decoration: TextDecoration.underline,
                         decorationStyle: TextDecorationStyle.dotted,
@@ -249,9 +249,9 @@ class _ManualLogDialogState extends State<ManualLogDialog> {
                   style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
             ],
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Enter only time you actually studied. This adds real time to your YPT record.',
-              style: TextStyle(fontSize: 11.5, color: Colors.grey),
+              style: TextStyle(fontSize: 11.5, color: yptGrey500(context)),
             ),
             if (_error != null) ...[
               const SizedBox(height: 10),
