@@ -1,4 +1,4 @@
-// wannabeYPT — Discord Rich Presence service (platform bridge)
+// wannabeYPT — Discord Activity service (platform bridge)
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can
@@ -13,11 +13,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Discord Rich Presence over the local RPC WebSocket. Web gets the real
-// implementation (discord_rpc_web.dart); every other platform gets a
-// no-op stub, because the RPC server only exists next to a running
-// Discord desktop client and a browser page can only reach it via
-// ws://127.0.0.1. See discord_rpc_protocol.dart for the protocol notes
-// and the two hard gates (registered RPC Origin, OAuth authentication).
-export 'discord_rpc_stub.dart'
-    if (dart.library.js_interop) 'discord_rpc_web.dart';
+// Discord Rich Presence through Discord Activities (Embedded App
+// SDK). Web gets the real implementation (discord_activity_web.dart,
+// via the JS bridge in web/discord-bridge.js); every other platform
+// gets a no-op stub, because Activities only exist inside the Discord
+// client. See discord_activity_web.dart for the flow and its two
+// portal requirements (Public Client on, https://127.0.0.1 redirect).
+export 'discord_activity_stub.dart'
+    if (dart.library.js_interop) 'discord_activity_web.dart';

@@ -119,6 +119,10 @@
       document.title = title || 'wannabeYPT';
     };
   </script>
+  <!-- Discord Activities bridge (window.wannabeDiscord). The script only
+       defines the bridge; the Embedded App SDK itself is fetched lazily,
+       and only when the page is running inside a Discord Activity iframe. -->
+  <script src="discord-bridge.js" defer></script>
   <script src="flutter_bootstrap.js" async></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>

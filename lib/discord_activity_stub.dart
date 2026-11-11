@@ -1,4 +1,4 @@
-// wannabeYPT — Discord Rich Presence stub (non-web platforms)
+// wannabeYPT — Discord Activity stub (non-web platforms)
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can
@@ -13,12 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// No-op DiscordRpc for non-web builds: same API as discord_rpc_web.dart,
-// every call silently does nothing.
-class DiscordRpc {
-  static final DiscordRpc instance = DiscordRpc._();
+// No-op DiscordActivity for non-web builds: same API as
+// discord_activity_web.dart, every call silently does nothing.
+class DiscordActivity {
+  static final DiscordActivity instance = DiscordActivity._();
 
-  DiscordRpc._();
+  DiscordActivity._();
 
   bool get enabled => false;
   bool get connected => false;
@@ -36,8 +36,6 @@ class DiscordRpc {
   }) async {}
 
   Future<void> clearActivity() async {}
-
-  Future<String?> authorize() async => null;
 
   void dispose() {}
 }

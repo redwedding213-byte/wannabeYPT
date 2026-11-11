@@ -428,10 +428,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(fontSize: 13)),
                     ),
                     Switch(
-                      value: st.discordRpcEnabled,
+                      value: st.discordActivityEnabled,
                       activeColor: kBrand,
                       onChanged: (v) {
-                        st.setDiscordRpcEnabled(v);
+                        st.setDiscordActivityEnabled(v);
                         setDialogState(() {});
                       },
                     ),
@@ -440,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             Text(
-                'Experimental: shows your study subject on Discord when Discord is running on this machine. Needs a Discord app set up first.',
+                'Experimental: shows your study subject on Discord when you open wannabeYPT as a Discord Activity. Launch it from Discord, turn this on, then start studying. Does nothing in a normal browser tab.',
                 style: TextStyle(fontSize: 11.5, color: yptGrey500(context))),
             const SizedBox(height: 6),
             const Text('From the developer',
