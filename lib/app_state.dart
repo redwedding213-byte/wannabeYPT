@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'discord_rpc.dart';
 import 'offline_sync.dart';
 import 'online_events.dart';
 import 'ypt_api.dart';
@@ -199,20 +198,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Discord Rich Presence (experimental, default off): shows the
-  /// current study subject on Discord via the local RPC WebSocket.
-  /// Needs Discord running on the same machine plus a real Discord
-  /// application client ID (see discord_rpc.dart); otherwise it just
-  /// no-ops silently.
-  bool discordRpcEnabled = false;
-
-  void setDiscordRpcEnabled(bool value) {
-    discordRpcEnabled = value;
-    DiscordRpc.instance.setEnabled(value);
-    _saveLocal();
-    notifyListeners();
-  }
-
   // ── Pomodoro ─────────────────────────────────────────────────────
   bool pomoOn = false;
   int focusMin = 50;
@@ -259,8 +244,6 @@ class AppState extends ChangeNotifier {
       ddayStr = sp.getString('dday');
       goalMinutes = sp.getInt('goalMin') ?? 0;
       lightTheme = sp.getBool('wannabe_theme_light') ?? false;
-      discordRpcEnabled = sp.getBool('discord_rpc_enabled') ?? false;
-      DiscordRpc.instance.setEnabled(discordRpcEnabled);
       pomoOn = sp.getBool('pomoOn') ?? false;
       focusMin = sp.getInt('focusMin') ?? 50;
       breakMin = sp.getInt('breakMin') ?? 10;
@@ -292,7 +275,6 @@ class AppState extends ChangeNotifier {
       }
       await sp.setInt('goalMin', goalMinutes);
       await sp.setBool('wannabe_theme_light', lightTheme);
-      await sp.setBool('discord_rpc_enabled', discordRpcEnabled);
       await sp.setBool('pomoOn', pomoOn);
       await sp.setInt('focusMin', focusMin);
       await sp.setInt('breakMin', breakMin);
@@ -836,11 +818,6 @@ class AppState extends ChangeNotifier {
       activeSubject = s;
       _startedAtMs = startedAtMs;
       _startTicker();
-      // Discord Rich Presence (best effort, silent when Discord is absent).
-      unawaited(DiscordRpc.instance.setActivity(
-        subject: s.title,
-        startedAtMs: startedAtMs,
-      ));
       if (pomoOn) _beginPhase('focus');
     } catch (e) {
       timerErrorText = 'Could not start timer: ${_readableError(e)}';
@@ -964,8 +941,6 @@ class AppState extends ChangeNotifier {
     activeSubject = null;
     _startedAtMs = null;
     elapsed = Duration.zero;
-    // Discord presence clears with the session (no-op when not connected).
-    unawaited(DiscordRpc.instance.clearActivity());
   }
 
   Future<void> _refreshSubjectTimesQuietly() async {

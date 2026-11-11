@@ -415,34 +415,6 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             const SizedBox(height: 6),
-            StatefulBuilder(
-              builder: (dialogCtx, setDialogState) {
-                final st = dialogCtx.read<AppState>();
-                return Row(
-                  children: [
-                    Icon(Icons.videogame_asset_outlined,
-                        size: 18, color: yptGrey500(context)),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Discord activity',
-                          style: TextStyle(fontSize: 13)),
-                    ),
-                    Switch(
-                      value: st.discordRpcEnabled,
-                      activeColor: kBrand,
-                      onChanged: (v) {
-                        st.setDiscordRpcEnabled(v);
-                        setDialogState(() {});
-                      },
-                    ),
-                  ],
-                );
-              },
-            ),
-            Text(
-                'Experimental: shows your study subject on Discord when Discord is running on this machine. Needs a Discord app set up first.',
-                style: TextStyle(fontSize: 11.5, color: yptGrey500(context))),
-            const SizedBox(height: 6),
             const Text('From the developer',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
