@@ -8,7 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey300, yptGrey400, yptGrey500, yptGrey600;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey300, yptGrey400, yptGrey500, yptGrey600, yptPanelColor;
 import 'timer_view.dart' show fmtMs;
 import 'stats_view.dart' show fmtHM;
 import 'member_profile_page.dart';
@@ -333,7 +333,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     if (subjects.isEmpty) return;
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xF21C1C24),
+      backgroundColor: yptPanelColor(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

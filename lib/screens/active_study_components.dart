@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCard2Color, yptGrey300, yptGrey400, yptGrey500;
+import '../main.dart' show kBrand, yptCard2Color, yptGrey300, yptGrey400, yptGrey500, yptPanelColor;
 import '../models.dart';
 import 'home_screen.dart' show TabBus;
 import 'leaderboards_view.dart';
@@ -317,7 +317,7 @@ class _BreakLogDialogState extends State<BreakLogDialog> {
         margin: const EdgeInsets.symmetric(horizontal: 24),
         constraints: const BoxConstraints(maxWidth: 320),
         decoration: BoxDecoration(
-          color: const Color(0xF21C1C24),
+          color: yptPanelColor(context),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
@@ -459,7 +459,7 @@ class StudyBottomDock extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xF21C1C24),
+          color: yptPanelColor(context),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
@@ -614,7 +614,7 @@ void showYptFeaturesMenu(BuildContext context) {
             margin: const EdgeInsets.fromLTRB(16, 48, 16, 16),
             constraints: const BoxConstraints(maxWidth: 360),
             decoration: BoxDecoration(
-              color: const Color(0xF21C1C24),
+              color: yptPanelColor(context),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),

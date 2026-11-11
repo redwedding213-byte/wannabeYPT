@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey100, yptGrey300, yptGrey400, yptGrey500, yptGrey600, yptHairline, yptDivider;
+import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey100, yptGrey300, yptGrey400, yptGrey500, yptGrey600, yptHairline, yptDivider, yptPanelColor;
 import '../models.dart';
 import 'avatar_store_view.dart';
 import 'challenges_view.dart';
@@ -723,7 +723,7 @@ class _TimerViewState extends State<TimerView> {
               margin: const EdgeInsets.fromLTRB(16, 44, 16, 16),
               constraints: const BoxConstraints(maxWidth: 370),
               decoration: BoxDecoration(
-                color: const Color(0xF21C1C24),
+                color: yptPanelColor(context),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.14),

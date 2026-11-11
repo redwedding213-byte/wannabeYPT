@@ -66,6 +66,15 @@ Color yptDivider(BuildContext context) =>
         ? const Color(0x14FFFFFF)
         : Colors.black.withValues(alpha: 0.14);
 
+/// Theme-aware floating-panel surface (grid menu, BreakLogDialog,
+/// StudyBottomDock, bottom sheets). Dark keeps the near-opaque #1C1C24
+/// the screens were built with; light uses near-opaque white so the panel
+/// stops being a black slab on a light screen.
+Color yptPanelColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xF21C1C24)
+        : const Color(0xF2FFFFFF);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupCaCerts(); // Windows TLS 루트 보완 (웹/기타 플랫폼은 no-op)
