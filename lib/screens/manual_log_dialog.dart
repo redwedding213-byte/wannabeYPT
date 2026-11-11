@@ -9,7 +9,7 @@ import 'timer_view.dart' show fmtMs;
 
 /// Manual study record dialog: subject, date, and start/end times.
 /// All user-entered, nothing pre-filled. Only time actually studied goes
-/// in — writes a real retroactive session to the YPT server via POST /study/add.
+/// in, writes a real retroactive session to the YPT server via POST /study/add.
 class ManualLogDialog extends StatefulWidget {
   final DateTime initialDay;
   final List<Subject> subjects;
@@ -148,7 +148,7 @@ class _ManualLogDialogState extends State<ManualLogDialog> {
         _saving = false;
         _error = e is YptApiException
             ? e.message
-            : 'Could not save — check connection and try again.';
+            : 'Could not save, check connection and try again.';
       });
     }
   }

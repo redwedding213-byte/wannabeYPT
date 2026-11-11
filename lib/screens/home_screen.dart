@@ -110,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  /// A browser refresh restarts the app — land back on the tab the
+  /// A browser refresh restarts the app, land back on the tab the
   /// user was on instead of always dumping them on Home.
   Future<void> _restoreTab() async {
     final sp = await SharedPreferences.getInstance();
@@ -190,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// YES tap: mark this account counted, tell the owner someone is
   /// actively using the app (same Web3Forms key as feedback), then
   /// swap the strip to the "Wanna say something?" follow-up.
-  /// The ping is best-effort — the strip swaps either way.
+  /// The ping is best-effort, the strip swaps either way.
   Future<void> _pingYes() async {
     // Capture the account before any await (lint-safe).
     final nick = context.read<AppState>().user?.nickname;
@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Stack(
                 children: [
-            // Full width, like the official app — the old 1020 cap
+            // Full width, like the official app, the old 1020 cap
             // left a narrow column floating in black on wide screens.
             IndexedStack(
               index: _tab,
@@ -517,7 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Unofficial web client for YPT (Yeolpumta). Everything syncs with your own YPT account — timers started here show up in the official app, and the other way round.',
+                'Unofficial web client for YPT (Yeolpumta). Everything syncs with your own YPT account, timers started here show up in the official app, and the other way round.',
                 style: TextStyle(fontSize: 13, color: yptGrey500(context))),
             const SizedBox(height: 10),
             StatefulBuilder(
@@ -676,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(fontSize: 13.5),
                   decoration: InputDecoration(
                     hintText:
-                        'How to reach you (optional) — email or Telegram name',
+                        'How to reach you (optional), email or Telegram name',
                     hintStyle:
                         TextStyle(color: yptGrey600(context), fontSize: 12.5),
                     border: OutlineInputBorder(

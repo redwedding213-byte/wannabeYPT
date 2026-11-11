@@ -1,4 +1,4 @@
-// wannabeYPT — notification bridge (non-web stub)
+// wannabeYPT, notification bridge (non-web stub)
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can

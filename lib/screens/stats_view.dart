@@ -8,7 +8,7 @@ import 'manual_log_dialog.dart';
 import 'timer_view.dart' show fmtMs;
 
 /// Statistics in the shape of the official app:
-/// Day — a month heatmap; tapping a day opens its detail (totals, max
+/// Day, a month heatmap; tapping a day opens its detail (totals, max
 /// focus, start/end, per-subject split, an hour strip and the session
 /// timeline). Week / Month / Trend summarise the same per-day data.
 class StatsView extends StatefulWidget {
@@ -29,7 +29,7 @@ String fmtHMSummary(int ms) {
 }
 
 String fmtClock(DateTime? t) =>
-    t == null ? '—' : DateFormat('a h:mm').format(t);
+    t == null ? '-' : DateFormat('a h:mm').format(t);
 
 class _StatsViewState extends State<StatsView> {
   String _period = 'Day';
@@ -96,7 +96,7 @@ class _StatsViewState extends State<StatsView> {
 
   @override
   Widget build(BuildContext context) {
-    // Stats stays at a readable width even on wide screens — the
+    // Stats stays at a readable width even on wide screens, the
     // month heatmap is a grid, and full width balloons its cells.
     // (Home / To-Do deliberately go full width like the official app.)
     return Center(
@@ -616,7 +616,7 @@ class _StatsViewState extends State<StatsView> {
               leading: const Icon(Icons.edit_outlined, size: 20),
               title: const Text('Edit log', style: TextStyle(fontSize: 14)),
               subtitle: const Text(
-                  'Not available on web — YPT only accepts log edits inside the official app.',
+                  'Not available on web. YPT only accepts log edits inside the official app.',
                   style: TextStyle(fontSize: 11.5)),
               onTap: () => Navigator.pop(context),
             ),
@@ -627,7 +627,7 @@ class _StatsViewState extends State<StatsView> {
               title: const Text('Delete log',
                   style: TextStyle(fontSize: 14, color: Colors.redAccent)),
               subtitle: const Text(
-                  'Same — delete from the official app.',
+                  'Same, delete from the official app.',
                   style: TextStyle(fontSize: 11.5)),
               onTap: () => Navigator.pop(context),
             ),
@@ -742,10 +742,10 @@ class _StatsViewState extends State<StatsView> {
           _summaryStat('Month total', fmtMs(total)),
           _summaryStat('Days studied', '$activeDays'),
           _summaryStat('Avg / active day',
-              activeDays == 0 ? '—' : fmtMs(total ~/ activeDays)),
+              activeDays == 0 ? '-' : fmtMs(total ~/ activeDays)),
           _summaryStat('Best day',
               bestDay == null
-                  ? '—'
+                  ? '-'
                   : '${DateFormat('MMM d').format(bestDay)} · ${fmtHM(best)}'),
         ],
       ),
@@ -1032,7 +1032,7 @@ class _StatsViewState extends State<StatsView> {
           _summaryStat('Days studied', '$activeDays'),
           _summaryStat('Best day',
               bestDay == null
-                  ? '—'
+                  ? '-'
                   : '${DateFormat('MMM d').format(bestDay)} · ${fmtHM(best)}'),
         ],
       ),

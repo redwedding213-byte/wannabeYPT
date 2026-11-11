@@ -159,9 +159,9 @@ int _studyMsFromLog(Map<String, dynamic> json) {
 class Subject {
   final int id;
   final String title; // tt
-  final int studyMs; // sm — 오늘 이 과목 공부 ms
+  final int studyMs; // sm, 오늘 이 과목 공부 ms
   final int order; // or
-  final int colorValue; // co — ARGB int
+  final int colorValue; // co, ARGB int
   final bool archived; // dl: 보관 여부로 추정(미확정). dl이 true일 때만 숨김 → 안전
 
   Subject({
@@ -260,9 +260,9 @@ class SubjectTimeSnapshot {
 }
 
 /// 로그인/리로드 응답 묶음 (sign-in-jwt, reload/info 공통 구조)
-/// A task (to-do) from reload/info's `tks` array — decoded from
+/// A task (to-do) from reload/info's `tks` array, decoded from
 /// real samples (2026-10-21): {id, t:title, sa:day (ISO, UTC
-/// midnight), s:status (null = open, 3 = done — confirmed by a
+/// midnight), s:status (null = open, 3 = done, confirmed by a
 /// before/after diff: ticking the sample task done flipped only
 /// s → 3 and bumped ua), d:? (stayed null when done), u:userId,
 /// sd:subject id, o:order, ca/ua:created/updated, ad:?, dl:deleted}.
@@ -270,9 +270,9 @@ class SubjectTimeSnapshot {
 /// is PROVEN not half-done: the site showed a triangle for 1 while
 /// the official app showed a cross (user-verified 2026-10-29). The
 /// next candidate is 2, on a 1/2/3 scale theory (1 = not done,
-/// 2 = half-done, 3 = done) — which also explains why Desky's
+/// 2 = half-done, 3 = done), which also explains why Desky's
 /// "done = 1" shows as not-done in the app. Still UNPROVEN until
-/// live verification shows a triangle in the app — keep every
+/// live verification shows a triangle in the app, keep every
 /// half-done read/write going through this constant.
 const int kTaskHalfDoneScore = 2;
 
@@ -281,7 +281,7 @@ class YptTask {
   final String title; // t
   final String date; // sa → yyyy-MM-dd
   final int subjectId; // sd
-  final int status; // s — 3 means done, 2 is the half-done candidate, 1 means not done in the official app
+  final int status; // s, 3 means done, 2 is the half-done candidate, 1 means not done in the official app
   final bool deleted; // dl
   final int order; // o
 
@@ -318,12 +318,12 @@ class UserData {
   final String? email; // e
   final List<Subject> subjects; // ss (archived ones filtered out)
   final Set<String> archivedTitles; // normalized titles of dl-flagged
-  // subjects in ss — kept so stats can hide their historical names.
+  // subjects in ss, kept so stats can hide their historical names.
   final DayLog? dayLog; // dl
   final int categoryId; // ci
   final int countryId; // coid
   final List<YptTask> tasks; // tks
-  final int studiconId; // p.si/csd/ssd — equipped studicon, -1 = default doll
+  final int studiconId; // p.si/csd/ssd, equipped studicon, -1 = default doll
 
   UserData({
     this.jwt,
@@ -483,11 +483,11 @@ class GroupMember {
   final int userId; // ud
   final String nickname; // n
   final String category; // ct
-  final int studyMs; // dl.sm — 오늘 공부시간 (완료된 세션 합계)
-  final bool studying; // dl.is — 서버의 실시간 공부 중 플래그 (im은 전원 true라 무의미)
-  final DateTime? startedAt; // dl.st — 최근 세션 시작 (UTC)
-  final DateTime? stoppedAt; // dl.sp — 최근 세션 종료 (UTC)
-  final int studiconId; // si — top-level when the payload carries it, else 0 (no doll)
+  final int studyMs; // dl.sm, 오늘 공부시간 (완료된 세션 합계)
+  final bool studying; // dl.is, 서버의 실시간 공부 중 플래그 (im은 전원 true라 무의미)
+  final DateTime? startedAt; // dl.st, 최근 세션 시작 (UTC)
+  final DateTime? stoppedAt; // dl.sp, 최근 세션 종료 (UTC)
+  final int studiconId; // si, top-level when the payload carries it, else 0 (no doll)
 
   GroupMember({
     required this.userId,
@@ -556,7 +556,7 @@ class SignInOk extends SignInResult {
 }
 
 class SignInError extends SignInResult {
-  final String code; // c — 113=계정/비번오류 등
+  final String code; // c, 113=계정/비번오류 등
   SignInError(this.code);
 }
 
@@ -581,7 +581,7 @@ DateTime? parseLogTime(Object? v) {
   return DateTime.tryParse(s);
 }
 
-/// One timed entry from a day log — a single study/rest session.
+/// One timed entry from a day log, a single study/rest session.
 /// Parsed leniently from the raw /logs/day payload; the raw entry is
 /// kept so the exact server shape stays visible while it is pinned down.
 class DaySession {
@@ -610,9 +610,9 @@ class DaySession {
   }) {
     // The real YPT shapes (confirmed from a live payload):
     //  study: {sb: 'Physics', sm: <duration ms>, st: <start ISO>, ia, ad}
-    //         — start + duration, no end, no own id.
+    //         - start + duration, no end, no own id.
     //  rest:  {sp: <end ISO>, rm: <duration ms>, tg: 'meals'|'rest'|…}
-    //         — end + duration.
+    //         - end + duration.
     final durMs = intOrNull(e['sm']);
     final restMs = intOrNull(e['rm']);
     final stVal = parseLogTime(
@@ -692,17 +692,17 @@ class DaySession {
   }
 }
 
-/// A full day's data from GET /logs/day — totals plus timed sessions.
+/// A full day's data from GET /logs/day, totals plus timed sessions.
 class DayDetail {
   final String date; // yyyy-MM-dd
   final int studyMs; // dl.sm
   final int restMs; // dl.rm
-  final int maxMs; // dl.mm — longest single focus
-  final int addedMs; // dl.ad — manually added time
+  final int maxMs; // dl.mm, longest single focus
+  final int addedMs; // dl.ad, manually added time
   final SubjectTimeSnapshot subjects;
   final List<DaySession> sessions; // sorted by start
-  final DateTime? dlStart; // dl.st — the day's own start stamp
-  final DateTime? dlEnd; // dl.sp — the day's own end stamp
+  final DateTime? dlStart; // dl.st, the day's own start stamp
+  final DateTime? dlEnd; // dl.sp, the day's own end stamp
   final Map<String, dynamic> raw;
 
   const DayDetail({
@@ -738,8 +738,8 @@ class DayDetail {
     // Archived subjects must not show their names in stats: the
     // official app hides archived subjects, but day payloads still
     // carry their historical entries (direct titles and subject-book
-    // indices). Collect them here — from this payload's subject book
-    // (dl-flagged entries) plus the caller's profile set — and hide
+    // indices). Collect them here, from this payload's subject book
+    // (dl-flagged entries) plus the caller's profile set, and hide
     // only their names below. Day totals are untouched.
     // NOTE: titleByIndex stays positional (every entry, archived or
     // not) so index lookups never shift onto the wrong title.
@@ -812,7 +812,7 @@ class DayDetail {
       }
     }
 
-    // dl.st / dl.sp are the day's own start/end stamps — trust them
+    // dl.st / dl.sp are the day's own start/end stamps, trust them
     // only when they look sane (off days carry a 2019 sentinel).
     DateTime? sane(Object? v) {
       final t = parseLogTime(v);
@@ -941,7 +941,7 @@ class NotificationItem {
 }
 
 /// One weekly timetable block (Desky's shape). Day convention is
-/// assumed 1 = Monday .. 7 = Sunday — unproven live.
+/// assumed 1 = Monday .. 7 = Sunday, unproven live.
 class TimetableBlock {
   final int id;
   final int subjectId;
@@ -991,17 +991,17 @@ String chatMediaUrl(String? raw) {
 }
 
 /// One group chat message (GET /chat/group/messages, POST
-/// /chat/group/message — both captured in the Desky spec). The list
+/// /chat/group/message, both captured in the Desky spec). The list
 /// item shape itself was never captured (the spec example is empty),
 /// so fromJson covers Desky's fallback keys. NOTE: `did` is a
-/// composite string (groupId_idx_timestamp) in the send response —
+/// composite string (groupId_idx_timestamp) in the send response,
 /// it is NEVER a studicon id, so it is never parsed as one, or
 /// avatars break until reload.
 class ChatMessage {
   final int id; // idx/id
   final int senderId; // uid/ud
   final String senderName; // nn/n
-  final int studiconId; // sd/st/si only — never did
+  final int studiconId; // sd/st/si only, never did
   final String text; // msg/m/text
   final String? photoUrl; // photo (CDN-resolved)
   final String? stickerUrl; // stickerUrl/sticker
@@ -1109,7 +1109,7 @@ class ChatMessage {
       senderId: firstIntValue(j, const ['uid', 'ud']),
       senderName:
           firstStringValue(j, const ['nn', 'n']) ?? 'Unknown',
-      // sd/st/si only — did is a composite string, never an id.
+      // sd/st/si only, did is a composite string, never an id.
       studiconId: firstIntValue(j, const ['sd', 'st', 'si']),
       text: firstStringValue(j, const ['msg', 'm', 'text']) ?? '',
       photoUrl: photo,
@@ -1141,7 +1141,7 @@ class ChatListResult {
   });
 }
 
-/// One official YPT sticker set (GET /chat/sticker/sets — captured
+/// One official YPT sticker set (GET /chat/sticker/sets, captured
 /// spec shape: {r: [{id, code, title, title_en, cover_image,
 /// items: [{item_id, is_active, order}]}]}). Sticker URLs are
 /// derived from items[].item_id: item ids are bare per-set
@@ -1198,7 +1198,7 @@ class StickerSet {
 }
 
 /// Challenges (Desky parity, built 2026-11-06).
-/// A challenge is a group study target over a date range — e.g.
+/// A challenge is a group study target over a date range, e.g.
 /// "wake up on time" (WAKEUP) or "study 4h a day" (STUDY).
 ///
 /// TWO shapes exist and the parser accepts both, because Desky's
@@ -1226,16 +1226,16 @@ class StudyChallenge {
   final String checkInMethod; // e.g. timer
   final DateTime startDate;
   final DateTime endDate;
-  final List<DateTime> dates; // ds — the challenge days
+  final List<DateTime> dates; // ds, the challenge days
   final int checkInCount;
   final double successThreshold;
   final int participantCount;
   final String status;
   final bool isJoined;
-  final int colorValue; // c — ARGB int, 0 = none
+  final int colorValue; // c, ARGB int, 0 = none
   final String? emoji;
   final int groupId;
-  /// trt — per-day results keyed by day index ('1'..'n').
+  /// trt, per-day results keyed by day index ('1'..'n').
   /// Meaning unverified from captured traffic: treated as
   /// 1 = day done, 0 = not done, only for progress math.
   final Map<String, int> dayResults;
@@ -1378,7 +1378,7 @@ class StudyChallenge {
 /// GET /mission/challenge/group/daily-logs). Shape from the spec
 /// examples: {id, ud, sd, ed, la, sm, gid, cuid, cid, st, guid,
 /// h, t (title), cd (description), ct (type), is, gt (group
-/// title), csd, ced}. The `ud` vs `cuid` split is unverified —
+/// title), csd, ced}. The `ud` vs `cuid` split is unverified,
 /// both are kept; `h` is kept raw and never shown as hours.
 class ChallengeDailyLog {
   final int id;

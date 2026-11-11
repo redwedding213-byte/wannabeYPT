@@ -1,4 +1,4 @@
-// wannabeYPT — notification bridge
+// wannabeYPT, notification bridge
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can

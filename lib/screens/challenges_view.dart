@@ -7,7 +7,7 @@ import '../models.dart';
 import '../ypt_api.dart';
 
 /// Challenges (Desky parity, built 2026-11-06).
-/// Group study targets over a date range — e.g. "wake up on time"
+/// Group study targets over a date range, e.g. "wake up on time"
 /// (WAKEUP) or "study 4h a day" (STUDY). Browse + join, my
 /// challenges with server-reported progress, and daily logs
 /// (mine + my group's). Nothing here touches study time or the
@@ -16,7 +16,7 @@ import '../ypt_api.dart';
 /// Deliberately NO check-in button: Desky's screen fakes one (it
 /// shows a success snackbar with no API call behind it) and neither
 /// Desky nor the captured-traffic spec has a check-in endpoint.
-/// Progress comes from the server only — check-ins happen through
+/// Progress comes from the server only, check-ins happen through
 /// the timer/study itself in the official app.
 ///
 /// The join/cancel/my endpoints are Desky-only (not in the spec),
@@ -80,7 +80,7 @@ class _ChallengesPageState extends State<ChallengesPage>
       if (!mounted) return;
       final available = results[0];
       var mine = results[1];
-      // The /my endpoint is Desky-only and may not exist — fall
+      // The /my endpoint is Desky-only and may not exist, fall
       // back to the joined items of the available list.
       if (mine.isEmpty) {
         mine = available.where((c) => c.isJoined).toList();

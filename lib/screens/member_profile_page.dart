@@ -1,4 +1,4 @@
-// wannabeYPT — member profile side panel
+// wannabeYPT, member profile side panel
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can
@@ -63,7 +63,7 @@ Future<void> showMemberProfile(
 
 /// A group member's profile, like the official app opens on tap:
 /// header, today's time, and their study pattern. Full day detail
-/// (month heatmap, subject split) exists only for your own profile —
+/// (month heatmap, subject split) exists only for your own profile,
 /// the API serves day logs for the signed-in user only. Other members
 /// get today + this week's per-day totals.
 ///
@@ -119,7 +119,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
   }
 
   /// A shake is a nudge to another person, so it always asks first.
-  /// Success and failure both show the server's real answer — a
+  /// Success and failure both show the server's real answer, a
   /// rejection surfaces its `m` message instead of a generic error.
   Future<void> _confirmShake(BuildContext context) async {
     // Capture these before the awaits: using `context` across an
@@ -193,7 +193,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
       for (final r in week) {
         if (_isMember(r)) _weekAggregate = r.studyMs;
       }
-      // Seed today from the member object itself — the ranks route
+      // Seed today from the member object itself, the ranks route
       // cannot be trusted to include everyone.
       final todayKey = AppState.dateStr(today);
       final displayToday = m.liveDisplayMs(now);
@@ -540,7 +540,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
 
   Widget _dayCard(DayDetail d) {
     String hm(DateTime? t) =>
-        t == null ? '—' : DateFormat('hh:mm a').format(t);
+        t == null ? '-' : DateFormat('hh:mm a').format(t);
     Widget cell(String label, String value) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

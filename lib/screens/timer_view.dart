@@ -101,7 +101,7 @@ class _TimerViewState extends State<TimerView> {
   }
 
   /// Slim progress line under the day total once a daily goal is
-  /// set — without it the goal was invisible on the Home screen.
+  /// set, without it the goal was invisible on the Home screen.
   Widget _goalProgress(int liveMs, int goalMinutes) {
     final goalMs = goalMinutes * 60000;
     final frac =
@@ -341,7 +341,7 @@ class _TimerViewState extends State<TimerView> {
                           ? 'Syncing…'
                           : st.lastSyncError != null
                               ? '${st.pendingSyncCount} session${st.pendingSyncCount == 1 ? '' : 's'} waiting to sync · ${st.lastSyncError}'
-                              : '${st.pendingSyncCount} session${st.pendingSyncCount == 1 ? '' : 's'} waiting to sync — tap to retry',
+                              : '${st.pendingSyncCount} session${st.pendingSyncCount == 1 ? '' : 's'} waiting to sync, tap to retry',
                       style:
                           const TextStyle(color: Colors.amber, fontSize: 12),
                     ),
@@ -398,7 +398,7 @@ class _TimerViewState extends State<TimerView> {
                             color: yptHairline(context)),
                     ],
                     const SizedBox(height: 18),
-                    // Edit subject pill — flows under the rows, like the official app.
+                    // Edit subject pill, flows under the rows, like the official app.
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Padding(
@@ -435,7 +435,7 @@ class _TimerViewState extends State<TimerView> {
     );
   }
 
-  // Today's tasks for one subject, nested under its row — the
+  // Today's tasks for one subject, nested under its row, the
   // official Home shows them there. Server rows show the true
   // state (done = filled check, half-done = triangle, else empty
   // circle) and tapping the circle opens the same Done/Half-done/
@@ -1139,7 +1139,7 @@ class _TimerViewState extends State<TimerView> {
 }
 
 /// One flat subject row: solid colour play button, name, today's time,
-/// and a ⋮ — the official app's timer list, no cards.
+/// and a ⋮, the official app's timer list, no cards.
 class _SubjectRow extends StatelessWidget {
   final Subject subject;
   final bool compact;
@@ -1333,7 +1333,7 @@ class _PomoPanel extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                  'Notifications are blocked in the browser — the banner and beep will still alert you.',
+                  'Notifications are blocked in the browser, the banner and beep will still alert you.',
                   style: TextStyle(fontSize: 11, color: yptGrey500(context))),
             ),
         ],
@@ -1344,7 +1344,7 @@ class _PomoPanel extends StatelessWidget {
   Widget _phaseArea(BuildContext context, AppState st) {
     if (st.pomoPhase == 'focus') {
       if (st.pomoOvertime) {
-        // Overtime: the focus clock hit zero — count up, study timer
+        // Overtime: the focus clock hit zero, count up, study timer
         // keeps running. Circle progress stays at 100 % (value=1).
         return Column(
           children: [
@@ -1424,7 +1424,7 @@ class _PomoPanel extends StatelessWidget {
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Text('Pomodoro ready — tap a subject to start a focus round',
+      child: Text('Pomodoro ready, tap a subject to start a focus round',
           style: TextStyle(fontSize: 12, color: yptGrey500(context))),
     );
   }

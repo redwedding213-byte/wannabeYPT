@@ -39,9 +39,9 @@ class AppState extends ChangeNotifier {
   bool timerLoading = false;
   String? timerErrorText;
 
-  // 오프라인 동기화 큐 — 핫스팟이 끊긴 채 정지한 세션.
+  // 오프라인 동기화 큐, 핫스팟이 끊긴 채 정지한 세션.
   // A stop that never reached the server is queued with its real
-  // start/stop times and replayed on reconnect — never lost, never typed.
+  // start/stop times and replayed on reconnect. Never lost, never typed.
   final OfflineSyncQueue _offlineQueue = OfflineSyncQueue();
   int pendingSyncCount = 0;
   bool syncingPending = false;
@@ -566,7 +566,7 @@ class AppState extends ChangeNotifier {
       showAppNotification('Focus complete', pomoNoticeBody!);
       notifyListeners();
     } else if (pomoPhase == 'break') {
-      // Break end never auto-starts focus — that stays a deliberate
+      // Break end never auto-starts focus. That stays a deliberate
       // choice. A finished long break also closes the set.
       final wasLong = pomoBreakLong;
       if (wasLong) pomoCycles = 0;
@@ -617,7 +617,7 @@ class AppState extends ChangeNotifier {
   final Set<int> _serverToggling = {};
 
   /// Optimistic status-score overrides for server tasks, keyed by
-  /// task id — the three-state menu path. Values: 3 done,
+  /// task id, the three-state menu path. Values: 3 done,
   /// [kTaskHalfDoneScore] half-done, null not done. Checked before
   /// [_serverDoneOverrides] so a menu pick wins over a stale binary
   /// toggle for the same task.
@@ -639,7 +639,7 @@ class AppState extends ChangeNotifier {
 
   /// Local archive overrides, persisted per subject id. The server's
   /// archive call can return success while the reloaded subject list
-  /// still carries dl=false — without these, an archived subject pops
+  /// still carries dl=false. Without these, an archived subject pops
   /// back to active after reload (Tara51's report). Overrides win
   /// over the server flag until the server agrees with them, exactly
   /// like the task done-overrides above. They live here, not in
@@ -721,7 +721,7 @@ class AppState extends ChangeNotifier {
     if (!ok) {
       _serverDoneOverrides.remove(task.id);
       plannerNotice =
-          'Couldn\'t update that task — it flipped back. Check connection and try again.';
+          'Couldn\'t update that task. It flipped back. Check connection and try again.';
       showAppNotification('Task not updated',
           'The server didn\'t confirm the change.');
     }
@@ -749,7 +749,7 @@ class AppState extends ChangeNotifier {
     if (!ok) {
       _serverStatusOverrides.remove(task.id);
       plannerNotice =
-          'Couldn\'t update that task — it flipped back. Check connection and try again.';
+          'Couldn\'t update that task. It flipped back. Check connection and try again.';
       showAppNotification('Task not updated',
           'The server didn\'t confirm the change.');
     }
@@ -760,7 +760,7 @@ class AppState extends ChangeNotifier {
   /// official app. On success the profile reloads and the task shows
   /// with its YPT tag; if the server doesn't confirm, or the reload
   /// can't see the new task, it falls back to a local task plus a
-  /// visible note — the task is never silently lost.
+  /// visible note, the task is never silently lost.
   Future<void> addTaskWithServer(
       String date, String subjectTitle, String text) async {
     final trimmed = text.trim();
@@ -794,13 +794,13 @@ class AppState extends ChangeNotifier {
       }
       addTask(date, subjectTitle, trimmed);
       plannerNotice =
-          'Created on the server, but this site\'s list couldn\'t confirm it yet — check the official app. It\'s also saved here so it isn\'t lost.';
+          'Created on the server, but this site\'s list couldn\'t confirm it yet. Check the official app. It\'s also saved here so it isn\'t lost.';
       notifyListeners();
       return;
     }
     addTask(date, subjectTitle, trimmed);
     plannerNotice =
-        'Couldn\'t reach the server — saved on this device only. It won\'t show in the official app yet.';
+        'Couldn\'t reach the server, saved on this device only. It won\'t show in the official app yet.';
     notifyListeners();
   }
 
@@ -902,7 +902,7 @@ class AppState extends ChangeNotifier {
     statsLoading = true;
     statsErrorText = null;
     notifyListeners();
-    // 각각 독립 실행 — 하나 실패해도 나머지는 로드 (랭킹이 과목시간 실패에 막히지 않게)
+    // 각각 독립 실행, 하나 실패해도 나머지는 로드 (랭킹이 과목시간 실패에 막히지 않게)
     try {
       await refreshSubjectTimes();
     } catch (_) {}
@@ -999,7 +999,7 @@ class AppState extends ChangeNotifier {
           errorText = errorMessage(code);
       }
     } on SocialAuthCancelled {
-      // 사용자가 로그인 안 함(취소/타임아웃) — 조용히 무시
+      // 사용자가 로그인 안 함(취소/타임아웃), 조용히 무시
     } catch (e) {
       errorText = '${provider.name} login failed: ${_readableError(e)}';
     } finally {
@@ -1027,7 +1027,7 @@ class AppState extends ChangeNotifier {
     timerErrorText = null;
     statsErrorText = null;
     groupsErrorText = null;
-    // The queue itself stays in SharedPreferences — its sessions belong
+    // The queue itself stays in SharedPreferences. Its sessions belong
     // to the account and sync on the next login.
     _stopSyncRetryTimer();
     _stopChatPolling();
@@ -1060,7 +1060,7 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       timerErrorText = 'Could not start timer: ${_readableError(e)}';
     }
-    // Network is up (start just succeeded) — flush any queued stops.
+    // Network is up (start just succeeded), flush any queued stops.
     if (activeSubject != null) unawaited(syncPendingSessions());
     timerLoading = false;
     notifyListeners();
@@ -1117,7 +1117,7 @@ class AppState extends ChangeNotifier {
           timerErrorText = 'Could not stop timer: ${_readableError(e)}';
         }
       } else {
-        // Server rejected the stop — keep the old behaviour: restore the
+        // Server rejected the stop, keep the old behaviour: restore the
         // timer so the user can stop again, show the server's message.
         activeSubject = previousSubject;
         _startedAtMs = started;

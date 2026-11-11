@@ -72,7 +72,7 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Official style: a flat text row, no card — title, then one grey
+    // Official style: a flat text row, no card, title, then one grey
     // meta line (category · owner). The rounded InkWell matters on
     // web: without it the hover highlight is a square-cornered band.
     return InkWell(
@@ -104,7 +104,7 @@ class _GroupCard extends StatelessWidget {
 }
 
 /// Browse + search public groups (the Groups tab's round button).
-/// Tapping a result opens its room — members are readable without
+/// Tapping a result opens its room, members are readable without
 /// joining; joining itself stays in the official app.
 class GroupSearchPage extends StatefulWidget {
   const GroupSearchPage({super.key});

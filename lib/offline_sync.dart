@@ -1,4 +1,4 @@
-// wannabeYPT — offline study-session sync queue
+// wannabeYPT, offline study-session sync queue
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can
@@ -14,7 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 // Offline sync queue (Desky port #3): when the phone hotspot drops while
-// stopping the timer, the session is real, so it is kept — not lost.
+// stopping the timer, the session is real, so it is kept, not lost.
 // A queued stop replays POST /study/stop with the ORIGINAL startedAt and
 // the real elapsed ms, in order, on reconnect. The queue only ever holds
 // genuine timer sessions (created from a real start/stop); there is no
@@ -28,7 +28,7 @@ import 'ypt_api.dart';
 
 /// One genuine timer session whose /study/stop never reached the server.
 class OfflineSession {
-  final String id; // '<startAtMs>_<subjectId>' — dedupes repeat stops.
+  final String id; // '<startAtMs>_<subjectId>', dedupes repeat stops.
   final int subjectId;
   final String subjectTitle;
   final int startAtMs;
@@ -113,7 +113,7 @@ class SyncResult {
 
 /// True when the request never produced a usable server answer.
 /// [YptApiException] means the server responded (HTTP error or s == false)
-/// — a server rejection, not a dropped connection. Everything else
+/// - a server rejection, not a dropped connection. Everything else
 /// (ClientException, TimeoutException, FormatException, ...) is treated as
 /// "never reached the server", so the session is safe to queue.
 bool isNetworkError(Object e) => e is! YptApiException;
@@ -155,7 +155,7 @@ class OfflineSyncQueue {
   }
 
   /// Adds a session. A second stop for the same (subject, startedAt)
-  /// replaces the first — one real session can never be credited twice
+  /// replaces the first, one real session can never be credited twice
   /// from this queue.
   Future<void> enqueue(OfflineSession session) async {
     final current = await getPending();

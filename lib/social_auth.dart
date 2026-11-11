@@ -31,7 +31,7 @@ class SocialAuthCancelled implements Exception {
   const SocialAuthCancelled();
 }
 
-/// 공급자 정의 — 값은 모두 YPT 공식 APK 리소스에서 추출(공개값).
+/// 공급자 정의, 값은 모두 YPT 공식 APK 리소스에서 추출(공개값).
 class SocialProvider {
   final String name; // YPT loginProvider 값
   final String idPrefix; // providerId 접두사

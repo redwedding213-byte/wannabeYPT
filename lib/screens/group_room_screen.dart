@@ -18,7 +18,7 @@ import 'active_study_components.dart';
 /// Home (the member desk grid), Attendance (the week table), Rankings
 /// (daily / weekly) and Invite (QR + link).
 ///
-/// "Studying" comes from the server's own live flag (`dl.is`) — the
+/// "Studying" comes from the server's own live flag (`dl.is`), the
 /// member-level `im` flag is true for everyone and means nothing. A live
 /// member's timer is their completed total plus the running session
 /// (now − `dl.st`), exactly what the official app shows.
@@ -42,7 +42,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
   String _rankMode = 'Daily';
 
   // Chat tab state (5th tab). Polling runs only while the chat tab
-  // is open — a web tab stays open, so background polling is a real
+  // is open, a web tab stays open, so background polling is a real
   // cost, and the timer is cancelled on leaving the tab or screen,
   // same discipline as the room's other timers.
   List<ChatMessage>? _chatMessages;
@@ -66,7 +66,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
   // Weekly data (Attendance + weekly Rankings) comes from the group
   // ranks route: type=week anchored on the week's Monday gives week
   // totals, and one type=day call per day gives the attendance table.
-  // The members endpoint ignores dates entirely — never use it here.
+  // The members endpoint ignores dates entirely, never use it here.
   bool _weekLoading = false;
   bool _weekTried = false;
   bool _weekRankOk = false;
@@ -177,7 +177,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       if (d.isAfter(today)) break;
       days.add(d);
     }
-    // Week totals: one ranks call anchored on Monday — the only date
+    // Week totals: one ranks call anchored on Monday, the only date
     // the server accepts for type=week (today's date returns empty).
     var rankOk = false;
     var weekMembers = <GroupMember>[];
@@ -192,7 +192,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     } catch (_) {}
     // Attendance: one type=day ranks call per day. If every day comes
     // back identical to today while today is non-zero, the server
-    // ignored the dates — show the honest fallback instead of a table
+    // ignored the dates, show the honest fallback instead of a table
     // that repeats today seven times.
     var attOk = false;
     final daily = <String, Map<String, int>>{};
@@ -255,7 +255,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
   }
 
   /// Shake-all nudges every member, so it always asks first.
-  /// Success and failure both show the server's real answer — a
+  /// Success and failure both show the server's real answer, a
   /// rejection surfaces its `m` message instead of a generic error.
   Future<void> _confirmShakeAll(BuildContext context) async {
     // Capture these before the awaits: using `context` across an
@@ -905,7 +905,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         Row(
           children: [
             Text(
-                myRank >= 0 ? 'My rank · Ranked #${myRank + 1}' : 'My rank · —',
+                myRank >= 0 ? 'My rank · Ranked #${myRank + 1}' : 'My rank · -',
                 style: const TextStyle(
                     color: kBrand, fontWeight: FontWeight.w600, fontSize: 13)),
             const Spacer(),
@@ -1177,7 +1177,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Weekly data could not be loaded from the server right now. Daily rankings work as usual — try again in a bit.',
+              'Weekly data could not be loaded from the server right now. Daily rankings work as usual, try again in a bit.',
               textAlign: TextAlign.center,
               style: TextStyle(color: yptGrey400(context), fontSize: 13),
             ),
@@ -1322,7 +1322,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     final sent = await context.read<AppState>().api.sendChatMessage(
           groupId: widget.group.id,
           nickname: nick,
-          // The group's real category STRING — never Desky's int 0.
+          // The group's real category STRING, never Desky's int 0.
           category: widget.group.category,
           userId: _myId,
           message: temp.text,
@@ -1336,7 +1336,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         _chatMessages =
             _chatMessages?.where((m) => m.id != temp.id).toList();
         _chatNotice =
-            'Could not send that message — check connection and try again.';
+            'Could not send that message, check connection and try again.';
       });
       return;
     }
@@ -1377,7 +1377,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     setState(() => _reacting.remove(m.id));
     if (!ok) {
       setState(
-          () => _chatNotice = 'Could not send that reaction — try again.');
+          () => _chatNotice = 'Could not send that reaction, try again.');
     }
     await _loadChat(silent: true);
   }
@@ -1526,7 +1526,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             children: [
               Text(
                 _chatDiag ??
-                    'No messages yet — say hi.',
+                    'No messages yet, say hi.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: yptGrey400(context), fontSize: 13.5),
               ),
@@ -1912,7 +1912,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         ),
         const SizedBox(height: 14),
         Text(
-          'Share this link with friends you want to study with — opening it joins them to this group. Test it once on your phone before sharing it widely.',
+          'Share this link with friends you want to study with. Opening it joins them to this group. Test it once on your phone before sharing it widely.',
           textAlign: TextAlign.center,
           style: TextStyle(color: yptGrey500(context), fontSize: 12),
         ),

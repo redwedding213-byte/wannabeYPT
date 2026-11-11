@@ -7,7 +7,7 @@ import '../models.dart';
 
 /// Notification center (read-only apart from read flags): the
 /// account's notifications, tap to mark one read, or mark all read.
-/// The endpoints are Desky-derived and unproven live — a failed load
+/// The endpoints are Desky-derived and unproven live, a failed load
 /// shows an error with a retry, never a crash or a fake list.
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});

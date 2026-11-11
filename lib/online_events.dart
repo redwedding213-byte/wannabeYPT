@@ -1,4 +1,4 @@
-// wannabeYPT — browser online/offline event bridge
+// wannabeYPT, browser online/offline event bridge
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can
@@ -16,6 +16,6 @@
 // Cross-platform bridge for the browser's `online` event. On web this
 // listens to window 'online' (e.g. the phone hotspot comes back);
 // everywhere else it is a no-op. The 60s retry timer in AppState is the
-// backstop, so a missed event only delays the sync — it never loses it.
+// backstop, so a missed event only delays the sync, it never loses it.
 export 'online_events_stub.dart'
     if (dart.library.js_interop) 'online_events_web.dart';

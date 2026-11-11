@@ -1,4 +1,4 @@
-// wannabeYPT — planner view
+// wannabeYPT, planner view
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can
@@ -22,7 +22,7 @@ import '../main.dart' show kBrand, yptCardColor, yptGrey100, yptGrey400, yptGrey
 import 'timer_view.dart' show fmtMs;
 
 /// To-Do in the shape of the official YPT app's To-Do screen:
-/// pure black, no cards — a week strip with small day squares,
+/// pure black, no cards, a week strip with small day squares,
 /// subject groups with a coloured bar and a ⊕ add button, tasks
 /// as colour circles. (The day's session plot lives in Statistics;
 /// a timetable here was dead weight and was removed 2026-10-21.)
@@ -32,7 +32,7 @@ import 'timer_view.dart' show fmtMs;
 /// tasks added here are created on the server first (so the app
 /// sees them) and fall back to this device with a note if the
 /// server doesn't confirm. Server tasks have no delete option here
-/// (no working server delete exists) — delete them in the official
+/// (no working server delete exists), delete them in the official
 /// app instead.
 class PlannerView extends StatefulWidget {
   const PlannerView({super.key});
@@ -204,7 +204,7 @@ class _PlannerViewState extends State<PlannerView> {
         // To-Do groups
         ..._todoSection(st),
         const SizedBox(height: 18),
-        Text('Tasks tagged YPT sync with the official app — tap a circle to set Done, Half-done, or Not done.',
+        Text('Tasks tagged YPT sync with the official app. Tap a circle to set Done, Half-done, or Not done.',
             style: TextStyle(fontSize: 10.5, color: yptGrey600(context))),
       ],
     );

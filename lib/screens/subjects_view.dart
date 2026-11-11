@@ -11,7 +11,7 @@ import 'timer_view.dart' show fmtMs;
 /// delete subjects on the server. Archived subjects come from the raw
 /// reload payload (the account's subject list filters them out), so
 /// this page reads reloadRaw directly. All writes are Desky-derived
-/// and unproven live — a failed write shows a notice, never a crash.
+/// and unproven live, a failed write shows a notice, never a crash.
 ///
 /// The local archive overrides themselves live in AppState (same
 /// SharedPreferences keys as before), so the Home timer list sees
@@ -21,7 +21,7 @@ import 'timer_view.dart' show fmtMs;
 /// delete subjects on the server. Archived subjects come from the raw
 /// reload payload (the account's subject list filters them out), so
 /// this page reads reloadRaw directly. All writes are Desky-derived
-/// and unproven live — a failed write shows a notice, never a crash.
+/// and unproven live, a failed write shows a notice, never a crash.
 class SubjectsPage extends StatefulWidget {
   const SubjectsPage({super.key});
   @override
@@ -119,7 +119,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text(
-                'Could not save that — check connection and try again.')));
+                'Could not save that, check connection and try again.')));
       }
       return;
     }
@@ -224,7 +224,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
     if (ok) {
       // Record the user's choice in AppState so the subject stays
       // archived (or unarchived) even if the reload still shows the
-      // old dl flag, and flip it in the list right away — no waiting
+      // old dl flag, and flip it in the list right away, no waiting
       // on reload. Home reads the same overrides, so it hides the
       // subject at once too.
       st.recordSubjectArchive(s.id, target);

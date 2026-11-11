@@ -7,7 +7,7 @@ import 'timer_view.dart' show fmtMs;
 
 /// Global / category leaderboards (read-only): the category's
 /// members ranked by study time, plus the signed-in user's own rank.
-/// The ranks endpoint is Desky-derived and unproven live — a failed
+/// The ranks endpoint is Desky-derived and unproven live, a failed
 /// load shows an error with a retry, never a crash or a fake list.
 class LeaderboardsPage extends StatefulWidget {
   const LeaderboardsPage({super.key});
@@ -122,7 +122,7 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
                   child: Text(
                     _myRank != null
                         ? 'My rank · Ranked #$_myRank'
-                        : 'My rank · —',
+                        : 'My rank · -',
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 13.5),
                   ),

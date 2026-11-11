@@ -7,7 +7,7 @@ import '../models.dart';
 /// Weekly timetable grid (read-only): the account's timetable
 /// blocks laid out Mon–Sun against the hours they cover. The
 /// endpoint and the 1 = Monday day convention are Desky-derived and
-/// unproven live — a failed load shows an error with a retry.
+/// unproven live, a failed load shows an error with a retry.
 class TimetablePage extends StatefulWidget {
   const TimetablePage({super.key});
   @override

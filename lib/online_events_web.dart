@@ -1,4 +1,4 @@
-// wannabeYPT — browser online event bridge (web implementation)
+// wannabeYPT, browser online event bridge (web implementation)
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can
@@ -20,7 +20,7 @@ import 'dart:js_interop_unsafe';
 external JSObject get _jsWindow;
 
 /// Registers [onOnline] to run when the browser regains connectivity
-/// (e.g. the phone hotspot comes back). Failures to attach are swallowed —
+/// (e.g. the phone hotspot comes back). Failures to attach are swallowed,
 /// the 60s retry timer in AppState is the backstop, so a missed event only
 /// delays the sync, it never loses a session.
 void listenForOnline(void Function() onOnline) {

@@ -1,4 +1,4 @@
-// wannabeYPT — browser online event bridge (non-web stub)
+// wannabeYPT, browser online event bridge (non-web stub)
 // Copyright (C) 2026 redwedding
 //
 // This file is part of wannabeYPT. This program is free software: you can

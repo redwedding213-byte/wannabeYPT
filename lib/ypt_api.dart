@@ -9,7 +9,7 @@ class YptApi {
   static const String base = 'https://pi.tgclab.com';
   static const Duration requestTimeout = Duration(seconds: 15);
 
-  // 실제 앱과 동일하게 보이도록 — 안드로이드 기기 모델 + dart:io UA.
+  // 실제 앱과 동일하게 보이도록, 안드로이드 기기 모델 + dart:io UA.
   // (실제 앱은 Build.MODEL 과 Dart/<버전> (dart:io) 를 보낸다.)
   static const String deviceModel = 'SM-S921N'; // Galaxy S24 (흔한 한국 모델)
   static const String userAgent = 'Dart/3.11 (dart:io)';
@@ -62,7 +62,7 @@ class YptApi {
     _client.close();
   }
 
-  /// POST /user/sign-in-jwt — 이메일 로그인. 성공 시 jwt 저장.
+  /// POST /user/sign-in-jwt, 이메일 로그인. 성공 시 jwt 저장.
   Future<SignInResult> signIn(String email, String password) async {
     final r = await _post(
         '/user/sign-in-jwt',
@@ -86,7 +86,7 @@ class YptApi {
     return SignInError(j['c']?.toString() ?? 'unknown');
   }
 
-  /// POST /user/social/sign-up-jwt — 소셜 로그인/가입(멱등). 성공 시 jwt 저장.
+  /// POST /user/social/sign-up-jwt, 소셜 로그인/가입(멱등). 성공 시 jwt 저장.
   /// 실제 앱과 동일 바디: {accessToken, providerId, email, loginProvider, new, getx, version}.
   /// providerId가 신규면 가입, 기존이면 그 계정으로 로그인 (RE: spec/SOCIAL_LOGIN.md).
   Future<SignInResult> socialSignIn(SocialCredential cred) async {
@@ -113,9 +113,9 @@ class YptApi {
     return SignInError(j['c']?.toString() ?? 'unknown');
   }
 
-  /// POST /user/v2/reload/info — 프로필/과목/오늘로그 갱신.
+  /// POST /user/v2/reload/info, 프로필/과목/오늘로그 갱신.
   /// 실제 앱과 동일: cd 값을 전부 null로 보내야 전체 데이터(ss 등)를 받는다.
-  /// (오래된 타임스탬프를 보내면 델타만 와서 과목이 빠짐 — 캡처로 확인)
+  /// (오래된 타임스탬프를 보내면 델타만 와서 과목이 빠짐, 캡처로 확인)
   Future<UserData> reloadInfo() async {
     final r = await _post('/user/v2/reload/info', {
       'pv': 0,
@@ -132,7 +132,7 @@ class YptApi {
     return UserData.fromJson(_decodeObject(r));
   }
 
-  /// POST /study/study-plan/rest — create a planner task on the server
+  /// POST /study/study-plan/rest, create a planner task on the server
   /// (Desky parity, found 2026-10-29; the Oct 21 hunt never tried this
   /// path). Returns true when the server confirms (HTTP 200 + s == true).
   Future<bool> createStudyPlanTask({
@@ -157,10 +157,10 @@ class YptApi {
     }
   }
 
-  /// PUT /study/study-plan/rest — toggle/edit a planner task on the server.
+  /// PUT /study/study-plan/rest, toggle/edit a planner task on the server.
   /// Done is written as score 3: that matches the observed official-app
   /// `tks` data and this client's `s == 3` read rule, and it also passes
-  /// Desky's any-nonzero read rule — so 3 satisfies all three readers,
+  /// Desky's any-nonzero read rule, so 3 satisfies all three readers,
   /// while Desky's 1 would break this client's own read side after a
   /// reload. Undone is written as score null. Returns true on confirm.
   Future<bool> toggleStudyPlanTask({
@@ -171,7 +171,7 @@ class YptApi {
       final r = await _put('/study/study-plan/rest', {
         'id': task.id,
         'title': task.title,
-        // sd 0 means no subject (General) — the server takes null there.
+        // sd 0 means no subject (General), the server takes null there.
         'subject_id': task.subjectId == 0 ? null : task.subjectId,
         'start_at': '${task.date}T00:00:00.000Z',
         'all_day': false,
@@ -186,7 +186,7 @@ class YptApi {
     }
   }
 
-  /// PUT /study/study-plan/rest — set a planner task's status
+  /// PUT /study/study-plan/rest, set a planner task's status
   /// score directly (three-state menu path). Same full payload as
   /// the toggle: Done writes 3, Half-done writes
   /// [kTaskHalfDoneScore] (second candidate: 1 proven not half-done
@@ -201,7 +201,7 @@ class YptApi {
       final r = await _put('/study/study-plan/rest', {
         'id': task.id,
         'title': task.title,
-        // sd 0 means no subject (General) — the server takes null there.
+        // sd 0 means no subject (General), the server takes null there.
         'subject_id': task.subjectId == 0 ? null : task.subjectId,
         'start_at': '${task.date}T00:00:00.000Z',
         'all_day': false,
@@ -216,7 +216,7 @@ class YptApi {
     }
   }
 
-  /// GET /logs/my-category-rank — 내 카테고리 등수. 응답 {s, mr}.
+  /// GET /logs/my-category-rank, 내 카테고리 등수. 응답 {s, mr}.
   Future<int?> myCategoryRank(int categoryId, int countryId) async {
     final r = await _get(
         '/logs/my-category-rank?category_id=$categoryId&country_id=$countryId');
@@ -226,7 +226,7 @@ class YptApi {
     return null;
   }
 
-  /// GET /logs/category/member/ranks — 카테고리 랭킹 멤버 (type=day/week/month).
+  /// GET /logs/category/member/ranks, 카테고리 랭킹 멤버 (type=day/week/month).
   /// 응답 {s, ms:[{n,sd,ud,si,...}], tc}. sd=공부ms, n=닉네임, si=studiconID.
   /// Desky hits the metadata CDN (picf) for this endpoint while this
   /// client used pi; try pi first, then picf, and take the first
@@ -257,7 +257,7 @@ class YptApi {
     return [];
   }
 
-  /// POST /logs/range/days — per-day totals for a date range.
+  /// POST /logs/range/days, per-day totals for a date range.
   /// Returns date (yyyy-MM-dd) → study ms, parsed leniently: the day
   /// list may sit under 'ls', 'ds', 'days', 'data', 'result' or
   /// 'items', each entry carrying a date-like and an ms-like key.
@@ -385,7 +385,7 @@ class YptApi {
   }
 
   /// POST /user/subject/hard-delete {id} → s == true. A different
-  /// endpoint from the parked task delete — this one is in scope.
+  /// endpoint from the parked task delete, this one is in scope.
   Future<bool> hardDeleteSubject(int id) async {
     try {
       final r = await _post('/user/subject/hard-delete', {'id': id});
@@ -426,7 +426,7 @@ class YptApi {
   //
   // UNCERTAIN, flagged not guessed: /mission/challenge/my,
   // /mission/challenge/join and /mission/challenge/cancel appear
-  // ONLY in Desky's repository code — none of the three is in the
+  // ONLY in Desky's repository code, none of the three is in the
   // OpenAPI spec. The live test (list + join one challenge) is
   // the real proof for those three. The two daily-logs endpoints
   // ARE in the spec.
@@ -453,7 +453,7 @@ class YptApi {
   }
 
   /// GET /mission/challenge/my → {s, rs: [challenge...]}.
-  /// Desky-only endpoint (not in the spec). Never throws — if the
+  /// Desky-only endpoint (not in the spec). Never throws, if the
   /// endpoint does not exist or fails, the caller falls back to
   /// the joined items of [fetchChallenges].
   Future<List<StudyChallenge>> fetchMyChallenges() async {
@@ -520,7 +520,7 @@ class YptApi {
       .toIso8601String()
       .replaceFirst(RegExp(r'\.\d+Z$'), '.000Z');
 
-  /// GET /mission/challenge/v2/daily-planner/logs — my daily
+  /// GET /mission/challenge/v2/daily-planner/logs, my daily
   /// challenge logs in a date range. Query: start_date/end_date
   /// (ISO UTC), timezone. Throws on transport or server failure.
   Future<List<ChallengeDailyLog>> fetchChallengeDailyLogs({
@@ -549,7 +549,7 @@ class YptApi {
         .toList();
   }
 
-  /// GET /mission/challenge/group/daily-logs — one group's daily
+  /// GET /mission/challenge/group/daily-logs, one group's daily
   /// challenge logs for a single date. Query: date (YYYY-MM-DD),
   /// timezone, group_id. Throws on transport or server failure.
   Future<List<ChallengeDailyLog>> fetchGroupChallengeDailyLogs({
@@ -587,14 +587,14 @@ class YptApi {
   // ALL of these go through the main API (pi.tgclab.com) with the
   // normal authed [_get]/[_post]. The catalog was first pointed at
   // the picf.tgclab.com CDN because CloudFront there 403s OPTIONS
-  // preflights — but the CDN proved unreliable from the browser
+  // preflights, but the CDN proved unreliable from the browser
   // ("Load failed" live, 2026-11-06, even though curl returned the
   // catalog fine). pi.tgclab.com returns the SAME {s, scs, hm} shape
   // for /studicon/list/famous (verified with curl), and its preflight
   // works, so the CDN is not used at all anymore.
   // All reads use [_ok2xx] (any 2xx) and surface the server's `m`,
   // same as challenges. Equip throws on failure (Desky
-  // swallows equip errors and returns true — this code does not).
+  // swallows equip errors and returns true, this code does not).
 
   /// One catalog page from the main API.
   /// Returns (items, hasMore). `hm` is the server's "has more pages".
@@ -680,7 +680,7 @@ class YptApi {
   }
 
   /// GET /studicon/my/list (main API) → {s, my: [...], p, w, va}.
-  /// `my` is the owned studicon ids — ints, or {id} objects
+  /// `my` is the owned studicon ids, ints, or {id} objects
   /// (Desky accepts both). Throws so the store can tell a failed
   /// load apart from "owns nothing".
   Future<Set<int>> fetchMyStudiconIds() async {
@@ -740,7 +740,7 @@ class YptApi {
 
   /// POST /user/studicon {sd, studiconId} → {s}.
   /// UNCERTAIN, flagged not guessed: this endpoint is NOT in the
-  /// OpenAPI spec at all — it is confirmed only by Desky's
+  /// OpenAPI spec at all, it is confirmed only by Desky's
   /// store_repository.dart (which sends both `sd` and `studiconId`
   /// and swallows all errors). The live test (equip one studicon,
   /// confirm it shows) is the real proof. Throws with the server's
@@ -765,7 +765,7 @@ class YptApi {
     }
   }
 
-  /// POST /study/add — a manual study record (retroactive session).
+  /// POST /study/add, a manual study record (retroactive session).
   /// Returns true on s == true, else throws with the server's message
   /// when present. End time is not sent; it is implied by stm + ms.
   /// The caller supplies user-entered values only: no auto-fill, no
@@ -850,7 +850,7 @@ class YptApi {
     return false;
   }
 
-  /// GET /timetable/timetables — weekly timetable blocks, read-only.
+  /// GET /timetable/timetables, weekly timetable blocks, read-only.
   /// Throws when the endpoint doesn't answer, so the caller can tell
   /// a failed load apart from a genuinely empty timetable.
   Future<List<TimetableBlock>> fetchTimetable() async {
@@ -872,7 +872,7 @@ class YptApi {
     }
   }
 
-  /// GET /logs/day?date= — 오늘 과목별 공부시간 (dayLog.ls).
+  /// GET /logs/day?date=, 오늘 과목별 공부시간 (dayLog.ls).
   /// API 버전에 따라 과목 식별자가 제목 또는 id 계열 키로 내려올 수 있다.
   Future<SubjectTimeSnapshot> dayLogSubjects(String date) async {
     final r = await _get('/logs/day?date=$date');
@@ -905,7 +905,7 @@ class YptApi {
     return SubjectTimeSnapshot(byId: byId, byTitle: byTitle);
   }
 
-  /// GET /group/list-new-2 — 둘러보기(신규) 그룹 목록. 응답 {s, gs:[...]}.
+  /// GET /group/list-new-2, 둘러보기(신규) 그룹 목록. 응답 {s, gs:[...]}.
   Future<List<Group>> browseGroups(int countryId, {int page = 1}) async {
     final r = await _get(
         '/group/list-new-2?category_id=0&order_type=promotedAt&only_available=false&only_open=false&only_cam=false&page=$page&country_id=$countryId&p=true');
@@ -915,7 +915,7 @@ class YptApi {
     return gs.whereType<Map<String, dynamic>>().map(Group.fromJson).toList();
   }
 
-  /// GET /group/groups/v2 — 내가 속한 그룹. 응답 {s, gs, ms, cs, ps} 4개 배열에 분산.
+  /// GET /group/groups/v2, 내가 속한 그룹. 응답 {s, gs, ms, cs, ps} 4개 배열에 분산.
   Future<List<Group>> myGroups() async {
     final r = await _get('/group/groups/v2');
     _ensureOk(r, 'group/groups/v2');
@@ -932,13 +932,13 @@ class YptApi {
     return out;
   }
 
-  /// GET /logs/group/members/v2 — 그룹 멤버(공부 현황). 응답 {s, ms:[...]}.
+  /// GET /logs/group/members/v2, 그룹 멤버(공부 현황). 응답 {s, ms:[...]}.
   Future<List<GroupMember>> groupMembers(int groupId, int countryId) async {
     final raw = await groupMembersRaw(groupId, countryId);
     return raw.map(GroupMember.fromJson).toList();
   }
 
-  /// Same endpoint, unparsed — for debugging the real response shape.
+  /// Same endpoint, unparsed, for debugging the real response shape.
   Future<List<Map<String, dynamic>>> groupMembersRaw(
       int groupId, int countryId) async {
     final r = await _get(
@@ -949,10 +949,10 @@ class YptApi {
     return ms.whereType<Map<String, dynamic>>().toList();
   }
 
-  /// POST /group/push/shake — nudge one group member.
+  /// POST /group/push/shake, nudge one group member.
   /// Desky sends {groupID, targetUserID}; the spec's captured-traffic
   /// example sends {user_id, group_id, from}. Both key styles are
-  /// sent — the server ignores unknown fields. `from` is the sender's
+  /// sent, the server ignores unknown fields. `from` is the sender's
   /// nickname and is REQUIRED: without it the server 500s (live-tested
   /// 2026-11-06). Accepts any 2xx ([_ok2xx]) and throws
   /// [YptApiException] with the server's `m` message on rejection,
@@ -978,7 +978,7 @@ class YptApi {
         _serverMessage(j) ?? j['c']?.toString() ?? 'Could not send shake.');
   }
 
-  /// POST /group/push/shake/all — nudge every member of the group.
+  /// POST /group/push/shake/all, nudge every member of the group.
   /// Spec's captured-traffic example is {groupID, from}; `from` is
   /// the sender's nickname and is REQUIRED (same 500 without it as
   /// the single shake). Same 2xx + `m` handling as [shakeMember].
@@ -997,7 +997,7 @@ class YptApi {
         _serverMessage(j) ?? j['c']?.toString() ?? 'Could not send shake.');
   }
 
-  /// POST /study/start — 타이머 시작. 응답에 dayLog 포함.
+  /// POST /study/start, 타이머 시작. 응답에 dayLog 포함.
   Future<DayLog?> studyStart(String subject, {int? taskId}) async {
     final r = await _post('/study/start',
         {'subject': subject, 'deviceModel': deviceModel, 'taskId': taskId});
@@ -1009,7 +1009,7 @@ class YptApi {
     throw YptApiException(j['c']?.toString() ?? 'study/start failed');
   }
 
-  /// POST /study/stop — 타이머 정지. startedAt=시작 epoch(ms).
+  /// POST /study/stop, 타이머 정지. startedAt=시작 epoch(ms).
   /// [studyMs] is the real elapsed ms (Desky sends `study_ms` too); the
   /// server credits exactly that, so a stop replayed minutes later from
   /// the offline queue still lands the right duration. Accepts any 2xx
@@ -1031,14 +1031,14 @@ class YptApi {
         _serverMessage(j) ?? j['c']?.toString() ?? 'study/stop failed');
   }
 
-  /// GET /logs/day?date= — raw payload (totals + timed sessions).
+  /// GET /logs/day?date=, raw payload (totals + timed sessions).
   Future<Map<String, dynamic>> dayLogRaw(String date) async {
     final r = await _get('/logs/day?date=$date');
     _ensureOk(r, 'logs/day');
     return _decodeObject(r);
   }
 
-  /// POST /user/v2/reload/info — raw payload, for shape discovery.
+  /// POST /user/v2/reload/info, raw payload, for shape discovery.
   Future<Map<String, dynamic>> reloadRaw() async {
     final r = await _post('/user/v2/reload/info', {
       'pv': 0,
@@ -1055,7 +1055,7 @@ class YptApi {
     return _decodeObject(r);
   }
 
-  /// GET /logs/group/members/v2 with an explicit date — whether the
+  /// GET /logs/group/members/v2 with an explicit date, whether the
   /// server honours it decides if weekly attendance/rankings can exist.
   Future<List<Map<String, dynamic>>> groupMembersRawOnDate(
       int groupId, int countryId, String date) async {
@@ -1067,7 +1067,7 @@ class YptApi {
     return ms.whereType<Map<String, dynamic>>().toList();
   }
 
-  /// GET /logs/group/member/ranks — per-member logs for a group.
+  /// GET /logs/group/member/ranks, per-member logs for a group.
   /// type=day honours its date; type=week needs the week's MONDAY as
   /// the date (any other day returns an empty list) and its dl.sm is
   /// the week aggregate. Entries share the members shape
@@ -1086,7 +1086,7 @@ class YptApi {
   }
 
   /// Read-only probe: HTTP status for a candidate route, -1 on error.
-  /// GET is used for read candidates, OPTIONS for write candidates —
+  /// GET is used for read candidates, OPTIONS for write candidates,
   /// neither mutates anything server-side.
   Future<int> probeStatus(String method, String path) async {
     try {
@@ -1148,7 +1148,7 @@ class YptApi {
 
   /// Decisive edit-log write test (user-approved 2026-10-21): push an
   /// OLD day's log (never today's) back through reload/info with one
-  /// session's duration +1 ms — first with the day array inside `cd`
+  /// session's duration +1 ms, first with the day array inside `cd`
   /// (where day logs live in reload responses), then at the top
   /// level. If a variant sticks, immediately push the original back
   /// through the same route and verify, so the test leaves no trace.
@@ -1172,7 +1172,7 @@ class YptApi {
           break;
         }
       }
-      if (day == null) return (0, 'skipped — no past day with sessions');
+      if (day == null) return (0, 'skipped, no past day with sessions');
       final dt = day['dt'].toString();
       final origSessionSm = intValue((day['ls'] as List).first['sm']);
 
@@ -1225,10 +1225,10 @@ class YptApi {
       if (route == null) {
         return (
           200,
-          '$dt session ${origSessionSm}ms · neither push changed anything — edit-log stays read-only'
+          '$dt session ${origSessionSm}ms · neither push changed anything, edit-log stays read-only'
         );
       }
-      // It stuck — push the original back through the winning route.
+      // It stuck, push the original back through the winning route.
       final revertBody = route == 'cd.ds'
           ? <String, Object?>{
               'pv': 0,
@@ -1251,7 +1251,7 @@ class YptApi {
       }
       return (
         200,
-        '$dt · route: $route · +1ms STUCK · reverted: ${reverted ? 'yes, data clean' : 'FAILED — 1ms remains'} · EDIT/DELETE LOG WRITES WORK via $route'
+        '$dt · route: $route · +1ms STUCK · reverted: ${reverted ? 'yes, data clean' : 'FAILED, 1ms remains'} · EDIT/DELETE LOG WRITES WORK via $route'
       );
     } catch (e) {
       return (-1, '$e');
@@ -1278,7 +1278,7 @@ class YptApi {
         }
       }
       if (target == null) {
-        return (0, 'skipped — no task titled test/test2 found');
+        return (0, 'skipped, no task titled test/test2 found');
       }
       final from = target['t'] as String;
       final to = from == 'test' ? 'test2' : 'test';
@@ -1313,8 +1313,8 @@ class YptApi {
       final pushTitle = titleIn(_decodeObject(r));
       final freshTitle = titleIn(await reloadRaw());
       final verdict = freshTitle == to
-          ? 'WRITE WORKS — task writes go through reload/info'
-          : 'no change — reload ignores pushed tasks (read-only)';
+          ? 'WRITE WORKS, task writes go through reload/info'
+          : 'no change, reload ignores pushed tasks (read-only)';
       return (
         r.statusCode,
         '$from → $to · push-response title: $pushTitle · fresh reload title: $freshTitle · $verdict'
@@ -1324,7 +1324,7 @@ class YptApi {
     }
   }
 
-  /// POST probe with an empty body — a real route should reject it
+  /// POST probe with an empty body, a real route should reject it
   /// with 400/422 rather than create anything; 404 means no route.
   Future<int> probePostEmpty(String path) async {
     try {
@@ -1338,7 +1338,7 @@ class YptApi {
   // ---- Group chat (Desky parity, built 2026-10-29) ----
   // List + send are backed by captured traffic in the Desky spec;
   // reactions are code-only (toggle semantics assumed, never shown);
-  // sticker sets follow the SPEC shape ({r: [...]}) — Desky's
+  // sticker sets follow the SPEC shape ({r: [...]}), Desky's
   // data['sets']/data['s'] parser contradicts the spec and is NOT
   // copied. Media upload is dead code in Desky and is skipped: v1
   // sends image URLs only.
@@ -1385,7 +1385,7 @@ class YptApi {
     }
   }
 
-  /// POST /chat/group/message — captured body. `category` MUST be
+  /// POST /chat/group/message, captured body. `category` MUST be
   /// the group's real category STRING (Group.category, from `c`);
   /// Desky's int 0 default is wrong against the captured example.
   /// Returns the sent message, or null on rejection. The response's
@@ -1429,7 +1429,7 @@ class YptApi {
   /// POST /chat/group/reaction {group_id, idx, reaction} → s == true.
   /// Code-only in Desky: toggle semantics are assumed (sending the
   /// same emoji again is expected to remove it) and were never
-  /// shown — the UI verifies add and remove separately live.
+  /// shown, the UI verifies add and remove separately live.
   Future<bool> sendChatReaction({
     required int groupId,
     required int messageId,
@@ -1469,7 +1469,7 @@ class YptApi {
     }
   }
 
-  /// Members endpoint with an arbitrary extra query string — used to
+  /// Members endpoint with an arbitrary extra query string, used to
   /// test whether other params (dt=, type=) change what comes back.
   Future<List<GroupMember>> groupMembersWithQuery(
       int groupId, int countryId, String extraQuery) async {
@@ -1497,15 +1497,15 @@ class YptApiException implements Exception {
 String errorMessage(String code) {
   switch (code) {
     case '113':
-      return 'Sign in failed — incorrect email or password.';
+      return 'Sign in failed, incorrect email or password.';
     case '112':
-      return 'Authentication failed — check your account.';
+      return 'Authentication failed, check your account.';
     case '104':
       return 'Request rejected.';
     case 'alert_server_error_msg':
       return 'A server error occurred.';
     case 'missing_jwt':
-      return 'Sign in failed — the server did not return a session token.';
+      return 'Sign in failed, the server did not return a session token.';
     default:
       if (code.startsWith('http_')) {
         return 'Request failed (HTTP ${code.substring(5)}).';

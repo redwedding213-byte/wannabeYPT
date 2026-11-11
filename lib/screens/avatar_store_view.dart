@@ -19,12 +19,12 @@ import '../ypt_api.dart';
 ///
 /// What this store does NOT do: buy. There is no purchase endpoint
 /// in Desky or the spec, and Desky's store only ever equips owned
-/// items — so not-owned items show their flame price with a note
+/// items, so not-owned items show their flame price with a note
 /// that buying happens in the official YPT app. The equip call
 /// (POST /user/studicon) is confirmed only by Desky's code, not by
 /// the spec; the live test (equip one, confirm it shows) is the
 /// proof. After a successful equip the group room picks the new
-/// doll up on its 20 s member poll — no app restart needed.
+/// doll up on its 20 s member poll, no app restart needed.
 class AvatarStorePage extends StatefulWidget {
   const AvatarStorePage({super.key});
   @override
@@ -189,7 +189,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
         _equippedId = previous;
         _equippingId = null;
       });
-      _showError('Could not equip that avatar — check connection and retry.');
+      _showError('Could not equip that avatar, check connection and retry.');
     }
   }
 
@@ -269,7 +269,7 @@ class _AvatarStorePageState extends State<AvatarStorePage>
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                       child: Text(
-                        'Buying avatars happens in the official YPT app — here you can equip the ones you own.',
+                        'Buying avatars happens in the official YPT app. Here you can equip the ones you own.',
                         style: TextStyle(color: yptGrey500(context), fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
