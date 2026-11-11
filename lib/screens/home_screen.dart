@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
-import '../main.dart' show kBrand, yptCardColor, yptGrey400, yptGrey500, yptGrey600;
+import '../main.dart' show kBrand, yptCardColor, yptGrey100, yptGrey400, yptGrey500, yptGrey600;
 import '../models.dart';
 import 'timer_view.dart';
 import 'planner_view.dart';
@@ -29,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _roomRestoreTried = false;
   bool _showYesBanner = false;
   bool _bannerFollowUp = false;
+  bool _whatsNewDismissed = false;
+  // "What's new" strip: shown on every open until this moment, then
+  // never again. 2026-11-12 15:46 IST is 10:16 UTC.
+  static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 12, 10, 16);
   String? _bannerCheckedNick;
 
   @override
@@ -166,10 +170,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     _maybeRestoreRoom(st);
 
+    final showWhatsNew =
+        DateTime.now().isBefore(_whatsNewExpiry) && !_whatsNewDismissed;
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
+            if (showWhatsNew) _whatsNewBanner(),
             if (_showYesBanner) _yesBanner(),
             Expanded(
               child: Stack(
@@ -196,6 +203,53 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// "What's new" strip at the top of Home. Lives for 24 hours from
+  /// the deploy (until 2026-11-12 15:46 IST), shows on every open in
+  /// that window, and the close button only hides it for the current
+  /// session. Text has no dash characters anywhere, by request.
+  Widget _whatsNewBanner() {
+    return Container(
+      color: yptCardColor(context),
+      padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'What\'s new',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: yptGrey100(context)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'White mode is here, find the toggle in About, tap the ? button. Thanks to Tara51 and AL..',
+                  style:
+                      TextStyle(fontSize: 12, color: yptGrey500(context)),
+                ),
+                Text(
+                  'Archived subjects now stay in the Archived section in Subjects. Thanks to Tara51.',
+                  style:
+                      TextStyle(fontSize: 12, color: yptGrey500(context)),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => setState(() => _whatsNewDismissed = true),
+            icon: Icon(Icons.close, size: 16, color: yptGrey500(context)),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
       ),
     );
   }
