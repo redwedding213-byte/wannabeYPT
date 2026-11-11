@@ -316,6 +316,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   style:
                       TextStyle(fontSize: 12, color: yptGrey500(context)),
                 ),
+                Text(
+                  'Group chat messages now pop up as PC notifications while the site is open in a background tab. Thanks to Ishu Kr.',
+                  style:
+                      TextStyle(fontSize: 12, color: yptGrey500(context)),
+                ),
+                Text(
+                  'Pomodoro can now be paused and resumed from the same point. Thanks to Tara51.',
+                  style:
+                      TextStyle(fontSize: 12, color: yptGrey500(context)),
+                ),
               ],
             ),
           ),

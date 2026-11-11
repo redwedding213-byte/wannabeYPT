@@ -1370,6 +1370,8 @@ class _PomoPanel extends StatelessWidget {
                 valueColor: const AlwaysStoppedAnimation(Colors.orangeAccent),
               ),
             ),
+            const SizedBox(height: 8),
+            _pauseRow(context, st),
           ],
         );
       }
@@ -1399,6 +1401,8 @@ class _PomoPanel extends StatelessWidget {
               valueColor: const AlwaysStoppedAnimation(kBrand),
             ),
           ),
+          const SizedBox(height: 8),
+          _pauseRow(context, st),
         ],
       );
     }
@@ -1419,6 +1423,8 @@ class _PomoPanel extends StatelessWidget {
                   fontFeatures: [FontFeature.tabularFigures()])),
           Text('Tap a subject to skip the break',
               style: TextStyle(fontSize: 11, color: yptGrey500(context))),
+          const SizedBox(height: 8),
+          _pauseRow(context, st),
         ],
       );
     }
@@ -1426,6 +1432,52 @@ class _PomoPanel extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text('Pomodoro ready, tap a subject to start a focus round',
           style: TextStyle(fontSize: 12, color: yptGrey500(context))),
+    );
+  }
+
+  /// Pause / Resume control under the phase countdown. While paused
+  /// the session is still running on the server, only the Pomodoro
+  /// clock is frozen, so the paused state is spelled out.
+  Widget _pauseRow(BuildContext context, AppState st) {
+    final paused = st.pomoPaused;
+    return Column(
+      children: [
+        if (paused)
+          const Text('PAUSED',
+              style: TextStyle(
+                  color: Colors.orangeAccent,
+                  fontSize: 11,
+                  letterSpacing: 3,
+                  fontWeight: FontWeight.w700)),
+        if (paused) const SizedBox(height: 4),
+        OutlinedButton.icon(
+          onPressed: () => paused
+              ? context.read<AppState>().resumePomo()
+              : context.read<AppState>().pausePomo(),
+          icon: Icon(
+              paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+              size: 16),
+          label: Text(paused ? 'Resume' : 'Pause'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: paused ? kBrand : null,
+            side: BorderSide(
+                color: paused
+                    ? kBrand
+                    : Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.3)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
+        if (paused)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('Session is still running, timer is frozen',
+                style: TextStyle(fontSize: 11, color: yptGrey500(context))),
+          ),
+      ],
     );
   }
 

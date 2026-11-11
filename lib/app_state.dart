@@ -353,6 +353,9 @@ class AppState extends ChangeNotifier {
   bool pomoBreakLong = false; // the running break is a long one
   String pomoPhase = 'idle'; // idle | focus | break | overtime
   bool pomoOvertime = false; // true once the focus clock hits zero
+  bool pomoPaused = false; // Pomodoro clock frozen, study session stays alive
+  Duration _pausedPhaseLeft = Duration.zero; // stashed countdown while paused
+  Duration _pausedOvertime = Duration.zero; // stashed overtime while paused
   DateTime? _phaseEndsAt;
   Duration phaseLeft = Duration.zero; // counts down during focus/break
   Duration overtimeElapsed = Duration.zero; // counts up after focus end
@@ -509,6 +512,9 @@ class AppState extends ChangeNotifier {
     pomoNoticeBody = null;
     pomoPhase = phase;
     pomoOvertime = false;
+    pomoPaused = false;
+    _pausedPhaseLeft = Duration.zero;
+    _pausedOvertime = Duration.zero;
     overtimeElapsed = Duration.zero;
     _overtimeStartedAt = null;
     final mins =
@@ -542,6 +548,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _pomoTick() async {
+    if (pomoPaused) return;
     if (pomoOvertime) {
       // Overtime: count up; study timer keeps running.
       _syncOvertime();
@@ -578,11 +585,53 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Pause the Pomodoro clock: freeze the focus or break countdown
+  /// (or the overtime count up) without ending anything. The study
+  /// session stays started on the server, so the study timer keeps
+  /// running; only the Pomodoro phase clock stops. Resume picks the
+  /// same phase up from the same point.
+  void pausePomo() {
+    if (pomoPaused) return;
+    if (pomoPhase != 'focus' && pomoPhase != 'break') return;
+    if (pomoOvertime) {
+      _syncOvertime();
+      _pausedOvertime = overtimeElapsed;
+    } else {
+      _syncPhaseLeft();
+      _pausedPhaseLeft = phaseLeft;
+    }
+    _pomoTicker?.cancel();
+    _pomoTicker = null;
+    pomoPaused = true;
+    notifyListeners();
+  }
+
+  void resumePomo() {
+    if (!pomoPaused) return;
+    if (pomoOvertime) {
+      _overtimeStartedAt = DateTime.now().subtract(_pausedOvertime);
+      _syncOvertime();
+    } else {
+      _phaseEndsAt = DateTime.now().add(_pausedPhaseLeft);
+      _syncPhaseLeft();
+    }
+    pomoPaused = false;
+    _pausedPhaseLeft = Duration.zero;
+    _pausedOvertime = Duration.zero;
+    _pomoTicker?.cancel();
+    _pomoTicker =
+        Timer.periodic(const Duration(milliseconds: 500), (_) => _pomoTick());
+    notifyListeners();
+  }
+
   void _resetPomo() {
     _pomoTicker?.cancel();
     _pomoTicker = null;
     pomoPhase = 'idle';
     pomoOvertime = false;
+    pomoPaused = false;
+    _pausedPhaseLeft = Duration.zero;
+    _pausedOvertime = Duration.zero;
     pomoBreakLong = false;
     _phaseEndsAt = null;
     phaseLeft = Duration.zero;
