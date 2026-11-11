@@ -22,6 +22,10 @@ String notifyPermissionState() => 'unsupported';
 
 void showAppNotification(String title, String body) {}
 
+void showChatNotification(String title, String body, int groupId) {}
+
+void registerChatNotifyClick(void Function(int groupId) onClick) {}
+
 void setWebPageTitle(String title) {}
 
 void setWebCloseGuard(bool enabled) {}

@@ -34,11 +34,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // never after this moment. 2026-11-12 15:46 IST is 10:16 UTC.
   static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 12, 10, 16);
   String? _bannerCheckedNick;
+  bool _chatNotifyAskTried = false;
 
   @override
   void initState() {
     super.initState();
     TabBus.index.addListener(_syncTab);
+    context.read<AppState>().chatOpenRequest.addListener(_onChatOpenRequest);
     _restoreTab();
   }
 
@@ -65,6 +67,47 @@ class _HomeScreenState extends State<HomeScreen> {
       await sp.setBool('whatsNewSeen_$nick', true);
       if (mounted) setState(() => _showWhatsNew = true);
     }
+  }
+
+  /// One-time chat notifications prompt: the first time the site
+  /// opens after login while the browser permission is still
+  /// undecided, ask once whether group chat toasts should be on.
+  /// The asked flag is per account, so it never repeats; "Not now"
+  /// leaves the toggle in About as the way back in.
+  void _maybeAskChatNotifications(AppState st, String nick) {
+    if (_chatNotifyAskTried || st.notifyPerm != 'default') return;
+    _chatNotifyAskTried = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final sp = await SharedPreferences.getInstance();
+      if (!mounted || sp.getBool('chatNotifyAsked_$nick') == true) return;
+      await sp.setBool('chatNotifyAsked_$nick', true);
+      if (!mounted) return;
+      final enable = await showDialog<bool>(
+        context: context,
+        builder: (d) => AlertDialog(
+          backgroundColor: yptCardColor(context),
+          title:
+              const Text('Chat notifications', style: TextStyle(fontSize: 16)),
+          content: const Text(
+              'Get a toast on this PC when someone messages your group chat, even while this site sits in a background tab. You can turn it off in About.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(d).pop(false),
+              child: const Text('Not now'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(d).pop(true),
+              child:
+                  const Text('Enable', style: TextStyle(color: kBrand)),
+            ),
+          ],
+        ),
+      );
+      if (enable == true && mounted) {
+        await context.read<AppState>().enableNotifications();
+      }
+    });
   }
 
   /// A browser refresh restarts the app — land back on the tab the
@@ -107,7 +150,29 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     TabBus.index.removeListener(_syncTab);
+    context
+        .read<AppState>()
+        .chatOpenRequest
+        .removeListener(_onChatOpenRequest);
     super.dispose();
+  }
+
+  /// A chat toast was clicked: open that group on its Chat tab.
+  void _onChatOpenRequest() {
+    final st = context.read<AppState>();
+    final id = st.chatOpenRequest.value;
+    if (id == null || !mounted) return;
+    st.chatOpenRequest.value = null;
+    Group? g;
+    for (final x in st.joinedGroups) {
+      if (x.id == id) {
+        g = x;
+        break;
+      }
+    }
+    if (g == null) return;
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => GroupRoomScreen(group: g!, initialTab: 4)));
   }
 
   void _syncTab() {
@@ -176,6 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _bannerCheckedNick = user.nickname;
       _checkBanner(user.nickname);
     }
+    _maybeAskChatNotifications(st, user.nickname);
     _maybeRestoreRoom(st);
 
     final showWhatsNew =
@@ -457,23 +523,56 @@ class _HomeScreenState extends State<HomeScreen> {
             StatefulBuilder(
               builder: (dialogCtx, setDialogState) {
                 final st = dialogCtx.read<AppState>();
-                return Row(
+                final chatDenied = st.notifyPerm == 'denied';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.light_mode_outlined,
-                        size: 18, color: yptGrey500(context)),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('White mode',
-                          style: TextStyle(fontSize: 13)),
+                    Row(
+                      children: [
+                        Icon(Icons.light_mode_outlined,
+                            size: 18, color: yptGrey500(context)),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text('White mode',
+                              style: TextStyle(fontSize: 13)),
+                        ),
+                        Switch(
+                          value: st.lightTheme,
+                          activeThumbColor: kBrand,
+                          onChanged: (v) {
+                            st.setLightTheme(v);
+                            setDialogState(() {});
+                          },
+                        ),
+                      ],
                     ),
-                    Switch(
-                      value: st.lightTheme,
-                      activeThumbColor: kBrand,
-                      onChanged: (v) {
-                        st.setLightTheme(v);
-                        setDialogState(() {});
-                      },
+                    Row(
+                      children: [
+                        Icon(Icons.chat_bubble_outline,
+                            size: 18, color: yptGrey500(context)),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text('Chat notifications',
+                              style: TextStyle(fontSize: 13)),
+                        ),
+                        Switch(
+                          value: st.chatNotifyEffective,
+                          activeThumbColor: kBrand,
+                          onChanged: chatDenied
+                              ? null
+                              : (v) async {
+                                  await st.setChatNotifyOn(v);
+                                  setDialogState(() {});
+                                },
+                        ),
+                      ],
                     ),
+                    if (chatDenied)
+                      Text(
+                        'Blocked in the browser settings, so toasts cannot show.',
+                        style: TextStyle(
+                            fontSize: 11.5, color: yptGrey500(context)),
+                      ),
                   ],
                 );
               },

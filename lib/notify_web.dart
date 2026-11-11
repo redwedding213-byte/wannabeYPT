@@ -42,6 +42,28 @@ void showAppNotification(String title, String body) {
   } catch (_) {}
 }
 
+/// Shows a browser notification for a new group chat message via
+/// window.yptNotifyChat. Clicking the toast opens that group's chat
+/// through window.yptOnChatNotifyClick (see registerChatNotifyClick).
+void showChatNotification(String title, String body, int groupId) {
+  try {
+    _fn('yptNotifyChat')
+        ?.callAsFunction(null, title.toJS, body.toJS, groupId.toJS);
+  } catch (_) {}
+}
+
+/// Registers the Dart callback invoked when a chat toast is clicked.
+/// The JS side (web/index.html) calls window.yptOnChatNotifyClick
+/// with the group id.
+void registerChatNotifyClick(void Function(int groupId) onClick) {
+  try {
+    final cb = ((JSNumber v) {
+      onClick(v.toDartInt);
+    }).toJS;
+    globalContext.setProperty('yptOnChatNotifyClick'.toJS, cb);
+  } catch (_) {}
+}
+
 /// Current Notification.permission without prompting.
 String notifyPermissionState() {
   try {

@@ -15,6 +15,12 @@ class AppState extends ChangeNotifier {
   AppState() {
     _loadLocal();
     _syncWebState();
+    // A chat toast click opens that group's chat (HomeScreen
+    // listens to chatOpenRequest). Registered once; the JS side
+    // reads window.yptOnChatNotifyClick at click time.
+    registerChatNotifyClick((id) {
+      chatOpenRequest.value = id;
+    });
     // Hotspot back → flush any queued stops right away. The 60s retry
     // timer is the backstop if this event never fires.
     listenForOnline(() => syncPendingSessions());
@@ -180,6 +186,127 @@ class AppState extends ChangeNotifier {
   bool groupsLoading = false;
   String? groupsErrorText;
 
+  // ── Group chat notifications (background tab toasts, Ishu Kr) ──
+  // A closed site cannot notify from the web alone, so this watches
+  // while the site is open in a background tab or PWA window: one
+  // 3 second tick, round robin across joined groups, sharing the
+  // chat tab's cadence instead of adding a second poller.
+  /// Stored pref for chat toasts, default ON. Only effective once
+  /// the browser permission is granted (chatNotifyEffective).
+  bool chatNotifyOn = true;
+  bool get chatNotifyEffective => chatNotifyOn && notifyPerm == 'granted';
+  /// The group whose room is open right now: the background poller
+  /// skips it, so a message you are already looking at never toasts.
+  int? chatRoomOpenGroupId;
+  /// Set by a toast click (JS bridge): HomeScreen opens this group
+  /// on its Chat tab.
+  final ValueNotifier<int?> chatOpenRequest = ValueNotifier<int?>(null);
+  Timer? _chatBgPoll;
+  final Map<int, int> _chatLastSeen = {};
+  int _chatBgIndex = 0;
+  bool _chatBgBusy = false;
+
+  /// Starts the background chat poller once the site is open, the
+  /// user is logged in, groups are known and chat toasts are
+  /// actually allowed. Safe to call from every login path and from
+  /// the notifications toggle; no-ops unless all conditions hold.
+  Future<void> ensureChatPolling() async {
+    if (user == null || _chatBgPoll != null) return;
+    if (!chatNotifyEffective) return;
+    if (joinedGroups.isEmpty) {
+      await loadGroups();
+    }
+    _maybeStartChatPoll();
+  }
+
+  void _maybeStartChatPoll() {
+    if (user == null || _chatBgPoll != null) return;
+    if (!chatNotifyEffective || joinedGroups.isEmpty) return;
+    _chatBgPoll =
+        Timer.periodic(const Duration(seconds: 3), (_) => _chatBgTick());
+  }
+
+  void _stopChatPolling() {
+    _chatBgPoll?.cancel();
+    _chatBgPoll = null;
+  }
+
+  /// One background tick: poll the next group in rotation. The first
+  /// sight of a group only seeds the baseline, so messages that
+  /// arrived before we started watching never toast. Later ticks
+  /// toast the newest message from someone else, one toast per batch.
+  Future<void> _chatBgTick() async {
+    if (!chatNotifyEffective || user == null || _chatBgBusy) return;
+    if (joinedGroups.isEmpty) return;
+    Group? next;
+    for (var i = 0; i < joinedGroups.length; i++) {
+      _chatBgIndex = (_chatBgIndex + 1) % joinedGroups.length;
+      final g = joinedGroups[_chatBgIndex];
+      if (g.id != chatRoomOpenGroupId) {
+        next = g;
+        break;
+      }
+    }
+    if (next == null) return;
+    final group = next;
+    _chatBgBusy = true;
+    try {
+      final res = await api.fetchChatMessages(group.id);
+      if (!res.httpOk) return;
+      final msgs = res.messages.where((m) => m.id > 0).toList()
+        ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+      if (msgs.isEmpty) return;
+      final maxId = msgs.map((m) => m.id).reduce((a, b) => a > b ? a : b);
+      final seen = _chatLastSeen[group.id];
+      if (seen == null) {
+        _chatLastSeen[group.id] = maxId;
+        return;
+      }
+      final myNick = user?.nickname;
+      final fresh = msgs
+          .where((m) => m.id > seen && !m.isNotice && m.senderName != myNick)
+          .toList();
+      _chatLastSeen[group.id] = maxId;
+      if (fresh.isEmpty) return;
+      showChatNotification(group.title, _chatToastBody(fresh.last), group.id);
+    } catch (_) {
+      // A failed background tick is silent: the next tick retries.
+    } finally {
+      _chatBgBusy = false;
+    }
+  }
+
+  String _chatToastBody(ChatMessage m) {
+    if (m.isSticker) return '${m.senderName} sent a sticker';
+    if (m.isImage) return '${m.senderName} sent a photo';
+    final t = m.text.trim();
+    final shown = t.length > 120 ? '${t.substring(0, 120)}…' : t;
+    return '${m.senderName}: $shown';
+  }
+
+  /// Forget a group's baseline (leaving its room): the next
+  /// background fetch seeds fresh, so messages from while the room
+  /// was open never toast after the fact.
+  void clearChatBaseline(int groupId) {
+    _chatLastSeen.remove(groupId);
+  }
+
+  /// Chat toast toggle (About dialog). Turning it on from 'default'
+  /// requests permission first; without a grant it stays off.
+  Future<void> setChatNotifyOn(bool value) async {
+    if (value && notifyPerm != 'granted') {
+      await enableNotifications();
+    }
+    chatNotifyOn = value && notifyPerm == 'granted';
+    await _saveLocal();
+    notifyListeners();
+    if (chatNotifyOn) {
+      unawaited(ensureChatPolling());
+    } else {
+      _stopChatPolling();
+    }
+  }
+
   Future<void> loadGroups() async {
     if (user == null) return;
     groupsLoading = true;
@@ -192,6 +319,7 @@ class AppState extends ChangeNotifier {
       groupsErrorText = 'Could not load groups: ${_readableError(e)}';
     }
     groupsLoading = false;
+    _maybeStartChatPoll();
     notifyListeners();
   }
 
@@ -261,6 +389,7 @@ class AppState extends ChangeNotifier {
       ddayStr = sp.getString('dday');
       goalMinutes = sp.getInt('goalMin') ?? 0;
       lightTheme = sp.getBool('wannabe_theme_light') ?? false;
+      chatNotifyOn = sp.getBool('wannabe_chat_notify_on') ?? true;
       pomoOn = sp.getBool('pomoOn') ?? false;
       focusMin = sp.getInt('focusMin') ?? 50;
       breakMin = sp.getInt('breakMin') ?? 10;
@@ -309,6 +438,7 @@ class AppState extends ChangeNotifier {
       }
       await sp.setInt('goalMin', goalMinutes);
       await sp.setBool('wannabe_theme_light', lightTheme);
+      await sp.setBool('wannabe_chat_notify_on', chatNotifyOn);
       await sp.setBool('pomoOn', pomoOn);
       await sp.setInt('focusMin', focusMin);
       await sp.setInt('breakMin', breakMin);
@@ -466,6 +596,7 @@ class AppState extends ChangeNotifier {
     unlockAudio();
     notifyPerm = await requestNotifyPermission();
     notifyListeners();
+    if (notifyPerm == 'granted') unawaited(ensureChatPolling());
   }
 
   // ── To-dos ───────────────────────────────────────────────────────
@@ -805,7 +936,10 @@ class AppState extends ChangeNotifier {
     }
     loading = false;
     notifyListeners();
-    if (user != null) unawaited(syncPendingSessions());
+    if (user != null) {
+      unawaited(syncPendingSessions());
+      unawaited(ensureChatPolling());
+    }
   }
 
   Future<bool> login(String email, String password) async {
@@ -823,6 +957,7 @@ class AppState extends ChangeNotifier {
           loading = false;
           notifyListeners();
           unawaited(syncPendingSessions());
+          unawaited(ensureChatPolling());
           return true;
         case SignInError(:final code):
           errorText = errorMessage(code);
@@ -858,6 +993,7 @@ class AppState extends ChangeNotifier {
           loading = false;
           notifyListeners();
           unawaited(syncPendingSessions());
+          unawaited(ensureChatPolling());
           return true;
         case SignInError(:final code):
           errorText = errorMessage(code);
@@ -894,6 +1030,10 @@ class AppState extends ChangeNotifier {
     // The queue itself stays in SharedPreferences — its sessions belong
     // to the account and sync on the next login.
     _stopSyncRetryTimer();
+    _stopChatPolling();
+    _chatLastSeen.clear();
+    chatOpenRequest.value = null;
+    chatRoomOpenGroupId = null;
     pendingSyncCount = 0;
     syncingPending = false;
     lastSyncError = null;
@@ -1141,6 +1281,7 @@ class AppState extends ChangeNotifier {
     setWebPageTitle('wannabeYPT');
     _ticker?.cancel();
     _syncRetryTimer?.cancel();
+    _chatBgPoll?.cancel();
     api.close();
     super.dispose();
   }

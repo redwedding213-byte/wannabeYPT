@@ -24,7 +24,9 @@ import 'active_study_components.dart';
 /// (now − `dl.st`), exactly what the official app shows.
 class GroupRoomScreen extends StatefulWidget {
   final Group group;
-  const GroupRoomScreen({super.key, required this.group});
+  // A chat toast click opens the room straight on the Chat tab.
+  final int initialTab;
+  const GroupRoomScreen({super.key, required this.group, this.initialTab = 0});
   @override
   State<GroupRoomScreen> createState() => _GroupRoomScreenState();
 }
@@ -85,6 +87,11 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       sp.setInt('openGroupId', widget.group.id);
       sp.setInt('openGroupAt', DateTime.now().millisecondsSinceEpoch);
     });
+    // The background chat poller skips this group while the room is
+    // open, so a message you are already looking at never toasts.
+    context.read<AppState>().chatRoomOpenGroupId = widget.group.id;
+    _tab = widget.initialTab;
+    if (_tab == 4) _startChatPoll();
     _load();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && (_members?.any((m) => m.isLive) ?? false)) {
@@ -110,6 +117,14 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     _refresher?.cancel();
     _earlyRefresh?.cancel();
     _stopChatPoll();
+    // Leaving the room: hand the group back to the background
+    // poller, with a fresh baseline so messages from while the
+    // room was open never toast after the fact.
+    final st = context.read<AppState>();
+    if (st.chatRoomOpenGroupId == widget.group.id) {
+      st.chatRoomOpenGroupId = null;
+    }
+    st.clearChatBaseline(widget.group.id);
     _chatCtrl.dispose();
     _chatScroll.dispose();
     super.dispose();

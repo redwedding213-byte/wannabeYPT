@@ -91,6 +91,23 @@
         }
       } catch (e) {}
     };
+    // Group chat toast: same beep and icon as yptNotify, but the
+    // notification carries its group id, replaces any earlier toast
+    // for that group (tag), and clicking it opens the group's chat
+    // through window.yptOnChatNotifyClick (registered from Dart).
+    window.yptNotifyChat = function (title, body, groupId) {
+      window.yptBeep();
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          var n = new Notification(title, { body: body, icon: 'icons/Icon-192.png', tag: 'ypt-chat-' + groupId });
+          n.onclick = function () {
+            try { window.focus(); } catch (e) {}
+            try { if (window.yptOnChatNotifyClick) window.yptOnChatNotifyClick(groupId); } catch (e) {}
+            try { n.close(); } catch (e) {}
+          };
+        }
+      } catch (e) {}
+    };
     window.yptNotifyState = function () {
       if (!('Notification' in window)) return 'unsupported';
       return Notification.permission;
