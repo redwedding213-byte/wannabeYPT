@@ -135,6 +135,23 @@ class AppState extends ChangeNotifier {
         };
         _serverDoneOverrides.removeWhere((id, v) => fresh[id] == v);
       }
+      // Archive overrides: the reloaded active list is ground truth.
+      // An archived override is done once the subject leaves the
+      // active list; an unarchived override is done once it is back.
+      if (archivedSubjectIds.isNotEmpty ||
+          unarchivedSubjectIds.isNotEmpty) {
+        final activeIds = {
+          for (final s in user?.subjects ?? const <Subject>[]) s.id
+        };
+        final beforeA = archivedSubjectIds.length;
+        final beforeU = unarchivedSubjectIds.length;
+        archivedSubjectIds.removeWhere((id) => !activeIds.contains(id));
+        unarchivedSubjectIds.removeWhere((id) => activeIds.contains(id));
+        if (archivedSubjectIds.length != beforeA ||
+            unarchivedSubjectIds.length != beforeU) {
+          unawaited(_saveArchiveOverrides());
+        }
+      }
       await _refreshSubjectTimesQuietly();
     } catch (e) {
       errorText = 'Could not load subjects: ${_readableError(e)}';
@@ -261,8 +278,25 @@ class AppState extends ChangeNotifier {
         }
       }
       notifyPerm = notifyPermissionState();
+      final archivedIds =
+          sp.getStringList(_kArchivedSubjectIdsKey) ?? const [];
+      final unarchivedIds =
+          sp.getStringList(_kUnarchivedSubjectIdsKey) ?? const [];
+      archivedSubjectIds
+        ..clear()
+        ..addAll(archivedIds
+            .map((e) => int.tryParse(e) ?? 0)
+            .where((e) => e > 0));
+      unarchivedSubjectIds
+        ..clear()
+        ..addAll(unarchivedIds
+            .map((e) => int.tryParse(e) ?? 0)
+            .where((e) => e > 0));
       notifyListeners();
     } catch (_) {}
+    if (!_archiveOverridesReady.isCompleted) {
+      _archiveOverridesReady.complete();
+    }
   }
 
   Future<void> _saveLocal() async {
@@ -471,6 +505,70 @@ class AppState extends ChangeNotifier {
   }
 
   bool serverTaskDone(YptTask t) => serverTaskScore(t) == 3;
+
+  /// Local archive overrides, persisted per subject id. The server's
+  /// archive call can return success while the reloaded subject list
+  /// still carries dl=false — without these, an archived subject pops
+  /// back to active after reload (Tara51's report). Overrides win
+  /// over the server flag until the server agrees with them, exactly
+  /// like the task done-overrides above. They live here, not in
+  /// SubjectsPage, so the Home timer list sees the same archived
+  /// state as the Subjects view.
+  static const _kArchivedSubjectIdsKey = 'wannabe_archived_subject_ids';
+  static const _kUnarchivedSubjectIdsKey =
+      'wannabe_unarchived_subject_ids';
+
+  /// Subject ids the user archived but the server still lists active.
+  final Set<int> archivedSubjectIds = {};
+
+  /// Subject ids the user unarchived but the server still lists archived.
+  final Set<int> unarchivedSubjectIds = {};
+
+  /// True once the local archive overrides have been read from storage.
+  final Completer<void> _archiveOverridesReady = Completer<void>();
+  Future<void> get archiveOverridesReady => _archiveOverridesReady.future;
+
+  Future<void> _saveArchiveOverrides() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setStringList(_kArchivedSubjectIdsKey,
+          archivedSubjectIds.map((e) => e.toString()).toList());
+      await sp.setStringList(_kUnarchivedSubjectIdsKey,
+          unarchivedSubjectIds.map((e) => e.toString()).toList());
+    } catch (_) {}
+  }
+
+  /// Record the user's own archive choice for a subject. It flips in
+  /// every list at once (Home included) and persists until a reload
+  /// shows the server agreeing with it.
+  void recordSubjectArchive(int id, bool archived) {
+    if (archived) {
+      archivedSubjectIds.add(id);
+      unarchivedSubjectIds.remove(id);
+    } else {
+      unarchivedSubjectIds.add(id);
+      archivedSubjectIds.remove(id);
+    }
+    unawaited(_saveArchiveOverrides());
+    notifyListeners();
+  }
+
+  /// Drop overrides the freshly loaded server list now agrees with.
+  /// Runs on the raw server list, not on subjects with overrides
+  /// already applied, or an override would agree with itself and be
+  /// deleted on the very first reload.
+  void dropAgreedArchiveOverrides(List<Subject> fresh) {
+    final byId = {for (final s in fresh) s.id: s.archived};
+    final beforeA = archivedSubjectIds.length;
+    final beforeU = unarchivedSubjectIds.length;
+    archivedSubjectIds.removeWhere((id) => byId[id] == true);
+    unarchivedSubjectIds.removeWhere((id) => byId[id] == false);
+    if (archivedSubjectIds.length != beforeA ||
+        unarchivedSubjectIds.length != beforeU) {
+      unawaited(_saveArchiveOverrides());
+      notifyListeners();
+    }
+  }
 
   /// Toggle a server ('YPT') task's done state via PUT
   /// /study/study-plan/rest. Optimistic: the checkbox flips at once

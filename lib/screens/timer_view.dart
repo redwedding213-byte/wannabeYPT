@@ -142,6 +142,13 @@ class _TimerViewState extends State<TimerView> {
   Widget build(BuildContext context) {
     final st = context.watch<AppState>();
     final user = st.user!;
+    // Archived subjects never show on Home. The server's dl flag is
+    // unreliable after archiving, so AppState's local archive
+    // overrides decide alongside it: a subject archived here stays
+    // hidden until the server agrees, and unarchiving brings it back.
+    final subjects = user.subjects
+        .where((s) => !st.archivedSubjectIds.contains(s.id))
+        .toList();
     final baseMs = st.todayStudyMs;
     final liveMs = baseMs + (st.studying ? st.elapsed.inMilliseconds : 0);
     final active = st.activeSubject;
@@ -350,7 +357,7 @@ class _TimerViewState extends State<TimerView> {
         if (st.pomoOn) const _PomoPanel(),
         const SizedBox(height: 4),
         Expanded(
-          child: user.subjects.isEmpty
+          child: subjects.isEmpty
               ? Center(
                   child: st.profileLoading
                       ? const CircularProgressIndicator()
@@ -380,11 +387,10 @@ class _TimerViewState extends State<TimerView> {
               : ListView(
                   padding: const EdgeInsets.only(bottom: 96),
                   children: [
-                    for (var i = 0; i < user.subjects.length; i++) ...[
-                      _SubjectRow(
-                          subject: user.subjects[i], compact: _compact),
-                      _todayTasks(st, user.subjects[i]),
-                      if (i < user.subjects.length - 1)
+                    for (var i = 0; i < subjects.length; i++) ...[
+                      _SubjectRow(subject: subjects[i], compact: _compact),
+                      _todayTasks(st, subjects[i]),
+                      if (i < subjects.length - 1)
                         Divider(
                             height: 1,
                             indent: 60,

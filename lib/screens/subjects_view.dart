@@ -2,20 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../app_state.dart';
 import '../main.dart' show yptCardColor, yptGrey400, yptGrey500;
 import '../models.dart';
 import 'timer_view.dart' show fmtMs;
 
-/// Local archive overrides, persisted per subject id. The server's
-/// archive call can return success while the reloaded subject list
-/// still carries dl=false — without these, an archived subject pops
-/// back to active after reload (Tara51's report). Overrides win
-/// over the server flag until the server agrees with them, exactly
-/// like the task done-overrides in AppState.reloadProfile.
-const _kArchivedIdsKey = 'wannabe_archived_subject_ids';
-const _kUnarchivedIdsKey = 'wannabe_unarchived_subject_ids';
+/// Subject management: add, rename, recolour, archive/unarchive and
+/// delete subjects on the server. Archived subjects come from the raw
+/// reload payload (the account's subject list filters them out), so
+/// this page reads reloadRaw directly. All writes are Desky-derived
+/// and unproven live — a failed write shows a notice, never a crash.
+///
+/// The local archive overrides themselves live in AppState (same
+/// SharedPreferences keys as before), so the Home timer list sees
+/// the same archived state as this page.
 
 /// Subject management: add, rename, recolour, archive/unarchive and
 /// delete subjects on the server. Archived subjects come from the raw
@@ -46,56 +46,27 @@ class _SubjectsPageState extends State<SubjectsPage> {
   bool _failed = false;
   bool _busy = false;
   List<Subject> _subjects = [];
-  Set<int> _archivedIds = {};
-  Set<int> _unarchivedIds = {};
-  late final Future<void> _overridesReady;
 
   @override
   void initState() {
     super.initState();
-    _overridesReady = _loadOverrides();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
-  }
-
-  Future<void> _loadOverrides() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final archived = sp.getStringList(_kArchivedIdsKey) ?? const [];
-      final unarchived = sp.getStringList(_kUnarchivedIdsKey) ?? const [];
-      if (!mounted) return;
-      setState(() {
-        _archivedIds =
-            archived.map((e) => int.tryParse(e) ?? 0).where((e) => e > 0).toSet();
-        _unarchivedIds = unarchived
-            .map((e) => int.tryParse(e) ?? 0)
-            .where((e) => e > 0)
-            .toSet();
-      });
-    } catch (_) {}
-  }
-
-  Future<void> _saveOverrides() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      await sp.setStringList(_kArchivedIdsKey,
-          _archivedIds.map((e) => e.toString()).toList());
-      await sp.setStringList(_kUnarchivedIdsKey,
-          _unarchivedIds.map((e) => e.toString()).toList());
-    } catch (_) {}
   }
 
   /// The user's own archive choice wins over the server's dl flag
   /// until a reload shows the server agreeing with it.
-  Subject _applyOverrides(Subject s) {
-    if (_archivedIds.contains(s.id)) return s.copyWith(archived: true);
-    if (_unarchivedIds.contains(s.id)) return s.copyWith(archived: false);
+  Subject _applyOverrides(AppState st, Subject s) {
+    if (st.archivedSubjectIds.contains(s.id)) {
+      return s.copyWith(archived: true);
+    }
+    if (st.unarchivedSubjectIds.contains(s.id)) {
+      return s.copyWith(archived: false);
+    }
     return s;
   }
 
-  void _dropAgreedOverrides(List<Subject> fresh) {
-    final byId = {for (final s in fresh) s.id: s.archived};
-    _archivedIds.removeWhere((id) => byId[id] == true);
-    _unarchivedIds.removeWhere((id) => byId[id] == false);
+  void _dropAgreedOverrides(AppState st, List<Subject> fresh) {
+    st.dropAgreedArchiveOverrides(fresh);
   }
 
   Future<void> _load() async {
@@ -104,7 +75,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
     final st = context.read<AppState>();
     // Overrides must be in memory before the list is built, or the
     // first load would ignore the user's archive choice.
-    await _overridesReady;
+    await st.archiveOverridesReady;
     if (_loading) return;
     setState(() {
       _loading = true;
@@ -123,13 +94,12 @@ class _SubjectsPageState extends State<SubjectsPage> {
       // This must run on the raw server list, not the list with
       // overrides already applied, or an override would agree with
       // itself and be deleted on the very first reload.
-      _dropAgreedOverrides(rawSubjects);
-      final all = rawSubjects.map(_applyOverrides).toList()
+      _dropAgreedOverrides(st, rawSubjects);
+      final all = rawSubjects.map((s) => _applyOverrides(st, s)).toList()
         ..sort((a, b) {
           if (a.archived != b.archived) return a.archived ? 1 : -1;
           return a.order.compareTo(b.order);
         });
-      unawaited(_saveOverrides());
       if (!mounted) return;
       setState(() {
         _subjects = all;
@@ -252,17 +222,12 @@ class _SubjectsPageState extends State<SubjectsPage> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) {
-      // Record the user's choice so the subject stays archived (or
-      // unarchived) even if the reload still shows the old dl flag,
-      // and flip it in the list right away — no waiting on reload.
-      if (target) {
-        _archivedIds.add(s.id);
-        _unarchivedIds.remove(s.id);
-      } else {
-        _unarchivedIds.add(s.id);
-        _archivedIds.remove(s.id);
-      }
-      unawaited(_saveOverrides());
+      // Record the user's choice in AppState so the subject stays
+      // archived (or unarchived) even if the reload still shows the
+      // old dl flag, and flip it in the list right away — no waiting
+      // on reload. Home reads the same overrides, so it hides the
+      // subject at once too.
+      st.recordSubjectArchive(s.id, target);
       setState(() {
         _subjects = _subjects
             .map((x) => x.id == s.id ? x.copyWith(archived: target) : x)
