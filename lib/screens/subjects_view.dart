@@ -48,11 +48,12 @@ class _SubjectsPageState extends State<SubjectsPage> {
   List<Subject> _subjects = [];
   Set<int> _archivedIds = {};
   Set<int> _unarchivedIds = {};
+  late final Future<void> _overridesReady;
 
   @override
   void initState() {
     super.initState();
-    _loadOverrides();
+    _overridesReady = _loadOverrides();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
@@ -98,28 +99,36 @@ class _SubjectsPageState extends State<SubjectsPage> {
   }
 
   Future<void> _load() async {
+    // Read the state object before the await so no BuildContext is
+    // used across an async gap.
+    final st = context.read<AppState>();
+    // Overrides must be in memory before the list is built, or the
+    // first load would ignore the user's archive choice.
+    await _overridesReady;
     if (_loading) return;
     setState(() {
       _loading = true;
       _failed = false;
     });
     try {
-      final st = context.read<AppState>();
       final raw = await st.api.reloadRaw();
       final ss = raw['ss'] is List ? raw['ss'] as List : const [];
-      final all = ss
+      final rawSubjects = ss
           .whereType<Map<String, dynamic>>()
           .map(Subject.fromJson)
           .where((s) => s.title.isNotEmpty)
-          .map(_applyOverrides)
-          .toList()
+          .toList();
+      // Fresh server state is ground truth: drop overrides the
+      // server now agrees with; keep the rest (propagation lag).
+      // This must run on the raw server list, not the list with
+      // overrides already applied, or an override would agree with
+      // itself and be deleted on the very first reload.
+      _dropAgreedOverrides(rawSubjects);
+      final all = rawSubjects.map(_applyOverrides).toList()
         ..sort((a, b) {
           if (a.archived != b.archived) return a.archived ? 1 : -1;
           return a.order.compareTo(b.order);
         });
-      // Fresh server state is ground truth: drop overrides the
-      // server now agrees with; keep the rest (propagation lag).
-      _dropAgreedOverrides(all);
       unawaited(_saveOverrides());
       if (!mounted) return;
       setState(() {
