@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showWhatsNew = false;
   // "What's new" strip: once per account, like the YES banner, and
   // never after this moment. 2026-11-12 15:46 IST is 10:16 UTC.
-  static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 12, 10, 16);
+  static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 13, 7, 50);
   String? _bannerCheckedNick;
   bool _chatNotifyAskTried = false;
 
@@ -63,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Mark it seen the moment it is shown, so the next open never
     // shows it again, even inside the 24 hour window.
     if (DateTime.now().isBefore(_whatsNewExpiry) &&
-        sp.getBool('whatsNewSeen_$nick') != true) {
-      await sp.setBool('whatsNewSeen_$nick', true);
+        sp.getBool('whatsNewSeen2_$nick') != true) {
+      await sp.setBool('whatsNewSeen2_$nick', true);
       if (mounted) setState(() => _showWhatsNew = true);
     }
   }
@@ -282,8 +282,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// "What's new" strip at the top of Home. Lives for 24 hours from
-  /// the deploy (until 2026-11-12 15:46 IST) and shows at most once
-  /// per account: the flag whatsNewSeen_<nickname> is set the moment
+  /// the deploy (until 2026-11-13 13:20 IST) and shows at most once
+  /// per account: the flag whatsNewSeen2_<nickname> is set the moment
   /// it is shown, so later opens never show it again. The close
   /// button only hides it for the current session. Text has no dash
   /// characters anywhere, by request.
@@ -323,6 +323,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Text(
                   'Pomodoro can now be paused and resumed from the same point. Thanks to Tara51.',
+                  style:
+                      TextStyle(fontSize: 12, color: yptGrey500(context)),
+                ),
+                Text(
+                  'Group chat photos can now be uploaded from your device and show inline in the chat. Thanks to Ishu Kr.',
                   style:
                       TextStyle(fontSize: 12, color: yptGrey500(context)),
                 ),

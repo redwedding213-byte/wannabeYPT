@@ -1009,17 +1009,38 @@ bool isLocalFilePath(String value) {
   return false;
 }
 
-/// Resolve a chat media path to a full URL: absolute URLs pass
-/// through, relative paths hang off the YPT media CDN (same host the
-/// safe batch uses for studicon dolls). A local device path resolves
-/// to an empty string, never to a fake CDN URL.
+/// Map a YPT media CDN URL to the same-origin path the app serves it
+/// under (Vercel rewrites in web/vercel.json). Both media hosts send
+/// no CORS headers, so Flutter web (CanvasKit) cannot fetch their
+/// images inline, while opening the same URL in a tab works fine.
+/// Same-origin = no CORS needed. This is the same fix the studicon
+/// dolls already use (/sc.v2/*).
+/// - alicdn.pallo.cn (chat uploads) -> /cdn-chat/...
+/// - alicdn.tgclab.com (chat photos, stickers) -> /cdn-tg/...
+/// Any other host passes through unchanged.
+String sameOriginCdnUrl(String value) {
+  const pallo = 'https://alicdn.pallo.cn/';
+  const tgclab = 'https://alicdn.tgclab.com/';
+  if (value.startsWith(pallo)) {
+    return '/cdn-chat/${value.substring(pallo.length)}';
+  }
+  if (value.startsWith(tgclab)) {
+    return '/cdn-tg/${value.substring(tgclab.length)}';
+  }
+  return value;
+}
+
+/// Resolve a chat media path to a loadable URL: absolute URLs pass
+/// through the same-origin CDN map above, relative paths hang off the
+/// YPT media CDN through the same-origin /cdn-tg prefix. A local
+/// device path resolves to an empty string, never to a fake CDN URL.
 String chatMediaUrl(String? raw) {
   if (raw == null || raw.isEmpty) return '';
   final value = raw.trim();
   if (isLocalFilePath(value)) return '';
-  if (value.startsWith('http')) return value;
+  if (value.startsWith('http')) return sameOriginCdnUrl(value);
   final path = value.startsWith('/') ? value : '/$value';
-  return 'https://alicdn.tgclab.com$path';
+  return '/cdn-tg$path';
 }
 
 /// One group chat message (GET /chat/group/messages, POST

@@ -1,1 +1,1 @@
-{"$schema":"https://openapi.vercel.sh/vercel.json","rewrites":[{"destination":"https://alicdn.tgclab.com/sc.v2/:path*","source":"/sc.v2/:path*"}]}
+{"$schema":"https://openapi.vercel.sh/vercel.json","rewrites":[{"destination":"https://alicdn.tgclab.com/sc.v2/:path*","source":"/sc.v2/:path*"},{"destination":"https://alicdn.pallo.cn/:path*","source":"/cdn-chat/:path*"},{"destination":"https://alicdn.tgclab.com/:path*","source":"/cdn-tg/:path*"}]}

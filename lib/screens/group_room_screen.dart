@@ -1311,8 +1311,12 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       senderName: nick,
       studiconId: 0,
       text: text.isNotEmpty ? text : (imageUrl != null ? 'Photo' : ''),
-      stickerUrl: stickerUrl,
-      imageUrl: imageUrl,
+      // Display through the same-origin path so the optimistic bubble
+      // loads inline (the CDN hosts send no CORS headers). The send
+      // payload below still carries the original hosted URL.
+      stickerUrl:
+          stickerUrl != null ? sameOriginCdnUrl(stickerUrl) : null,
+      imageUrl: imageUrl != null ? sameOriginCdnUrl(imageUrl) : null,
       sentAt: DateTime.now(),
     );
     setState(() {
@@ -1941,7 +1945,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                               _sendChat(stickerUrl: item.url);
                             },
                             child: Image.network(
-                              item.url,
+                              sameOriginCdnUrl(item.url),
                               fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) => Icon(
                                   Icons.broken_image,
