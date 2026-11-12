@@ -980,13 +980,45 @@ class TimetableBlock {
       );
 }
 
+/// True when a value is a path to a file on the sender's own device
+/// (a macOS /Users/... path, /tmp/..., a Windows C:\... path, or a
+/// file:// URL), not a web address. Such values must never be treated
+/// as a loadable image URL: a pasted clipboard path used to become a
+/// fake CDN URL and render as a broken image box.
+bool isLocalFilePath(String value) {
+  final v = value.trim();
+  if (v.isEmpty) return false;
+  if (v.startsWith('file:')) return true;
+  if (v.contains('\\')) return true;
+  if (RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(v)) return true;
+  const roots = [
+    '/users/',
+    '/home/',
+    '/var/',
+    '/tmp/',
+    '/private/',
+    '/data/',
+    '/storage/',
+    '/sdcard/',
+    '/mnt/'
+  ];
+  final lower = v.toLowerCase();
+  for (final r in roots) {
+    if (lower.startsWith(r)) return true;
+  }
+  return false;
+}
+
 /// Resolve a chat media path to a full URL: absolute URLs pass
 /// through, relative paths hang off the YPT media CDN (same host the
-/// safe batch uses for studicon dolls).
+/// safe batch uses for studicon dolls). A local device path resolves
+/// to an empty string, never to a fake CDN URL.
 String chatMediaUrl(String? raw) {
   if (raw == null || raw.isEmpty) return '';
-  if (raw.startsWith('http')) return raw;
-  final path = raw.startsWith('/') ? raw : '/$raw';
+  final value = raw.trim();
+  if (isLocalFilePath(value)) return '';
+  if (value.startsWith('http')) return value;
+  final path = value.startsWith('/') ? value : '/$value';
   return 'https://alicdn.tgclab.com$path';
 }
 
@@ -1076,15 +1108,33 @@ class ChatMessage {
   }
 
   factory ChatMessage.fromJson(Map<String, dynamic> j) {
+    var text = firstStringValue(j, const ['msg', 'm', 'text']) ?? '';
+    // A local device path sent as an image value is not loadable: show
+    // the path as text instead of a broken image box. The send path
+    // writes 'Photo' as the placeholder text for image sends, so that
+    // placeholder is replaced too, real user text is kept.
+    String? localPathText;
     String? photo;
     final photoRaw = j['photo'];
     if (photoRaw != null && photoRaw.toString().isNotEmpty) {
-      photo = chatMediaUrl(photoRaw.toString());
+      if (isLocalFilePath(photoRaw.toString())) {
+        localPathText ??= photoRaw.toString();
+      } else {
+        photo = chatMediaUrl(photoRaw.toString());
+      }
     }
     final rawImg = j['img'] ?? j['imageUrl'];
-    final image = rawImg != null && rawImg.toString().isNotEmpty
-        ? chatMediaUrl(rawImg.toString())
-        : null;
+    String? image;
+    if (rawImg != null && rawImg.toString().isNotEmpty) {
+      if (isLocalFilePath(rawImg.toString())) {
+        localPathText ??= rawImg.toString();
+      } else {
+        image = chatMediaUrl(rawImg.toString());
+      }
+    }
+    if (localPathText != null && (text.isEmpty || text == 'Photo')) {
+      text = localPathText;
+    }
     final rawThumb = j['th'] ?? j['thumbUrl'];
     final thumb = rawThumb != null && rawThumb.toString().isNotEmpty
         ? chatMediaUrl(rawThumb.toString())
@@ -1111,7 +1161,7 @@ class ChatMessage {
           firstStringValue(j, const ['nn', 'n']) ?? 'Unknown',
       // sd/st/si only, did is a composite string, never an id.
       studiconId: firstIntValue(j, const ['sd', 'st', 'si']),
-      text: firstStringValue(j, const ['msg', 'm', 'text']) ?? '',
+      text: text,
       photoUrl: photo,
       stickerUrl: sticker,
       imageUrl: image,

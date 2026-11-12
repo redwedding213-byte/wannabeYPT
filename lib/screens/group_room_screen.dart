@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
 import '../models.dart';
 import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey300, yptGrey400, yptGrey500, yptGrey600, yptPanelColor;
@@ -54,6 +56,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
   Timer? _chatPoll;
   bool _chatPollRunning = false;
   bool _chatSending = false;
+  bool _uploadingImage = false;
   final _chatCtrl = TextEditingController();
   final _chatScroll = ScrollController();
   bool _chatScrolledOnce = false;
@@ -1424,6 +1427,94 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     });
   }
 
+  void _showImageOptionsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: yptCardColor(context),
+        title: const Text('Send an image', style: TextStyle(fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Upload a photo'),
+              subtitle: const Text('Choose a photo from your device'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _pickAndSendImage();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.link_outlined),
+              title: const Text('Paste image URL'),
+              subtitle: const Text('Send a photo from a web link'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _showImageUrlDialog();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndSendImage() async {
+    if (_chatSending || _uploadingImage) return;
+    XFile? picked;
+    try {
+      picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _chatNotice =
+          'Could not pick that photo, try again.');
+      return;
+    }
+    if (picked == null || !mounted) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _uploadingImage = true;
+      _chatNotice = 'Uploading photo...';
+    });
+    final url = await context.read<AppState>().api.uploadChatImage(
+          groupId: widget.group.id,
+          bytes: bytes,
+          filename: picked.name,
+        );
+    if (!mounted) return;
+    setState(() => _uploadingImage = false);
+    if (url == null) {
+      setState(() => _chatNotice =
+          'Photo upload failed, check connection and try again.');
+      return;
+    }
+    await _sendChat(imageUrl: url);
+  }
+
+  void _submitImageUrl(String raw) {
+    final url = raw.trim();
+    if (url.isEmpty) return;
+    if (isLocalFilePath(url)) {
+      setState(() => _chatNotice =
+          'That looks like a file on your device. Use Upload a photo to send it.');
+      return;
+    }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      setState(() => _chatNotice =
+          'Paste a web link starting with http or https, or use Upload a photo for a file on your device.');
+      return;
+    }
+    _sendChat(imageUrl: url);
+  }
+
   void _showImageUrlDialog() {
     final ctrl = TextEditingController();
     showDialog(
@@ -1440,8 +1531,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           ),
           onSubmitted: (_) {
             Navigator.of(ctx).pop();
-            final url = ctrl.text.trim();
-            if (url.isNotEmpty) _sendChat(imageUrl: url);
+            _submitImageUrl(ctrl.text);
           },
         ),
         actions: [
@@ -1452,8 +1542,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              final url = ctrl.text.trim();
-              if (url.isNotEmpty) _sendChat(imageUrl: url);
+              _submitImageUrl(ctrl.text);
             },
             child: const Text('Send'),
           ),
@@ -1694,6 +1783,66 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     );
   }
 
+  String _imageLabel(String url) {
+    try {
+      final segments = Uri.parse(url).pathSegments;
+      if (segments.isNotEmpty) return segments.last;
+    } catch (_) {}
+    return url;
+  }
+
+  /// A failed image never shows as an empty broken box: the bubble
+  /// names the problem, shows the file name, and opens the link on tap.
+  Widget _imageLoadFallback(String url, bool own) {
+    final dim = own
+        ? Colors.white70
+        : yptGrey500(context);
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.tryParse(url);
+        if (uri != null) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Container(
+        width: 220,
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.broken_image, size: 20, color: dim),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Image could not be loaded',
+                    style:
+                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _imageLabel(url),
+              style: TextStyle(fontSize: 11.5, color: dim),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Tap to open the link',
+              style: TextStyle(fontSize: 11.5, color: dim),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _chatBubble(ChatMessage m, bool own) {
     final bg = own ? kBrand : yptCard2Color(context);
     final fg = own ? Colors.white : (Theme.of(context).brightness == Brightness.light ? Colors.grey[800] : Colors.grey[100]);
@@ -1713,12 +1862,8 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
           m.displayImageUrl!,
           height: 180,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            height: 120,
-            alignment: Alignment.center,
-            child: Icon(Icons.broken_image,
-                size: 36, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-          ),
+          errorBuilder: (_, __, ___) =>
+              _imageLoadFallback(m.displayImageUrl!, own),
         ),
       );
     } else {
@@ -1831,9 +1976,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
             },
           ),
           IconButton(
-            tooltip: 'Send image by URL',
+            tooltip: 'Send image',
             icon: Icon(Icons.image_outlined, color: yptGrey400(context)),
-            onPressed: _showImageUrlDialog,
+            onPressed: _uploadingImage ? null : _showImageOptionsDialog,
           ),
           Expanded(
             child: TextField(

@@ -1426,6 +1426,47 @@ class YptApi {
     }
   }
 
+  /// POST https://alifn.tgclab.com/file, multipart photo upload for
+  /// group chat. Protocol from Desky's ChatMediaRepository, matching
+  /// the spec's /file endpoint: fields file (bytes + filename),
+  /// groupID, type=chat. Returns the hosted image URL on
+  /// alicdn.pallo.cn, or null. CORS is open for this host from the
+  /// live site (preflight verified 2026-11-12).
+  Future<String?> uploadChatImage({
+    required int groupId,
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    try {
+      if (jwt == null || jwt!.isEmpty) return null;
+      final req = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://alifn.tgclab.com/file'),
+      );
+      req.headers['authorization'] = 'JWT $jwt';
+      req.headers['User-Agent'] = userAgent;
+      req.fields['groupID'] = groupId.toString();
+      req.fields['type'] = 'chat';
+      req.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: filename.isNotEmpty ? filename : 'chat.jpg',
+      ));
+      final streamed =
+          await req.send().timeout(const Duration(seconds: 30));
+      final r = await http.Response.fromStream(streamed);
+      if (r.statusCode != 200) return null;
+      final j = _decodeObject(r);
+      final raw = j['url'] ?? j['path'] ?? j['file'];
+      if (raw == null || raw.toString().isEmpty) return null;
+      final u = raw.toString();
+      if (u.startsWith('http')) return u;
+      return 'https://alicdn.tgclab.com${u.startsWith('/') ? u : '/$u'}';
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// POST /chat/group/reaction {group_id, idx, reaction} → s == true.
   /// Code-only in Desky: toggle semantics are assumed (sending the
   /// same emoji again is expected to remove it) and were never
