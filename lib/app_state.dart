@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'offline_sync.dart';
 import 'online_events.dart';
+import 'visibility_events.dart';
 import 'ypt_api.dart';
 import 'models.dart';
 import 'notify.dart';
@@ -24,6 +25,10 @@ class AppState extends ChangeNotifier {
     // Hotspot back → flush any queued stops right away. The 60s retry
     // timer is the backstop if this event never fires.
     listenForOnline(() => syncPendingSessions());
+    // Tab visible again → catch up on chat toasts right away. The 3s
+    // poller is throttled in a hidden tab, so without this, messages
+    // that arrived while hidden could sit un-toasted for minutes.
+    listenForVisible(() => unawaited(_chatBgCatchUp()));
   }
   UserData? user;
   bool loading = false;
@@ -205,6 +210,10 @@ class AppState extends ChangeNotifier {
   final Map<int, int> _chatLastSeen = {};
   int _chatBgIndex = 0;
   bool _chatBgBusy = false;
+  // Throttle detection: a hidden tab stretches the 3s tick to ~60s.
+  // The last tick time and the last catch-up time drive the fix.
+  DateTime? _chatBgLastTickAt;
+  DateTime? _chatBgLastCatchUpAt;
 
   /// Starts the background chat poller once the site is open, the
   /// user is logged in, groups are known and chat toasts are
@@ -235,9 +244,21 @@ class AppState extends ChangeNotifier {
   /// sight of a group only seeds the baseline, so messages that
   /// arrived before we started watching never toast. Later ticks
   /// toast the newest message from someone else, one toast per batch.
+  /// If the tick arrives far later than the 3s interval, the browser
+  /// throttled the timer while the tab was hidden, so check every
+  /// group at once instead of one round-robin step.
   Future<void> _chatBgTick() async {
     if (!chatNotifyEffective || user == null || _chatBgBusy) return;
     if (joinedGroups.isEmpty) return;
+    final now = DateTime.now();
+    final gap = _chatBgLastTickAt == null
+        ? Duration.zero
+        : now.difference(_chatBgLastTickAt!);
+    _chatBgLastTickAt = now;
+    if (gap > const Duration(seconds: 15)) {
+      await _chatBgCatchUp();
+      return;
+    }
     Group? next;
     for (var i = 0; i < joinedGroups.length; i++) {
       _chatBgIndex = (_chatBgIndex + 1) % joinedGroups.length;
@@ -248,29 +269,66 @@ class AppState extends ChangeNotifier {
       }
     }
     if (next == null) return;
-    final group = next;
     _chatBgBusy = true;
     try {
-      final res = await api.fetchChatMessages(group.id);
-      if (!res.httpOk) return;
-      final msgs = res.messages.where((m) => m.id > 0).toList()
-        ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
-      if (msgs.isEmpty) return;
-      final maxId = msgs.map((m) => m.id).reduce((a, b) => a > b ? a : b);
-      final seen = _chatLastSeen[group.id];
-      if (seen == null) {
-        _chatLastSeen[group.id] = maxId;
-        return;
-      }
-      final myNick = user?.nickname;
-      final fresh = msgs
-          .where((m) => m.id > seen && !m.isNotice && m.senderName != myNick)
-          .toList();
-      _chatLastSeen[group.id] = maxId;
-      if (fresh.isEmpty) return;
-      showChatNotification(group.title, _chatToastBody(fresh.last), group.id);
+      await _pollGroupForToast(next);
     } catch (_) {
       // A failed background tick is silent: the next tick retries.
+    } finally {
+      _chatBgBusy = false;
+    }
+  }
+
+  /// Check one group against the baseline and toast its newest fresh
+  /// message from someone else, if any. Does not manage _chatBgBusy;
+  /// callers do. The baseline seeding rule is unchanged: the first
+  /// sight of a group only seeds, it never toasts.
+  Future<void> _pollGroupForToast(Group group) async {
+    final res = await api.fetchChatMessages(group.id);
+    if (!res.httpOk) return;
+    final msgs = res.messages.where((m) => m.id > 0).toList()
+      ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+    if (msgs.isEmpty) return;
+    final maxId = msgs.map((m) => m.id).reduce((a, b) => a > b ? a : b);
+    final seen = _chatLastSeen[group.id];
+    if (seen == null) {
+      _chatLastSeen[group.id] = maxId;
+      return;
+    }
+    final myNick = user?.nickname;
+    final fresh = msgs
+        .where((m) => m.id > seen && !m.isNotice && m.senderName != myNick)
+        .toList();
+    _chatLastSeen[group.id] = maxId;
+    if (fresh.isEmpty) return;
+    showChatNotification(group.title, _chatToastBody(fresh.last), group.id);
+  }
+
+  /// Catch-up after the tab was hidden or the timer throttled: check
+  /// every joined group (except the open room) against the baseline
+  /// and toast the newest fresh message per group. Rate-limited to
+  /// once per 5 seconds so a flurry of focus events cannot spam
+  /// fetches. The baseline seeding rule is unchanged.
+  Future<void> _chatBgCatchUp() async {
+    if (!chatNotifyEffective || user == null || _chatBgBusy) return;
+    if (joinedGroups.isEmpty) return;
+    final now = DateTime.now();
+    if (_chatBgLastCatchUpAt != null &&
+        now.difference(_chatBgLastCatchUpAt!) <
+            const Duration(seconds: 5)) {
+      return;
+    }
+    _chatBgLastCatchUpAt = now;
+    _chatBgBusy = true;
+    try {
+      for (final group in joinedGroups) {
+        if (group.id == chatRoomOpenGroupId) continue;
+        try {
+          await _pollGroupForToast(group);
+        } catch (_) {
+          // One group's failure must not block the rest.
+        }
+      }
     } finally {
       _chatBgBusy = false;
     }

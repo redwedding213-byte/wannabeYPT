@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
+import '../download_file.dart';
 import '../models.dart';
 import '../main.dart' show kBrand, yptCardColor, yptCard2Color, yptGrey300, yptGrey400, yptGrey500, yptGrey600, yptPanelColor;
 import 'timer_view.dart' show fmtMs;
@@ -1858,6 +1859,111 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     );
   }
 
+  /// Full-screen viewer for a chat photo: the full image with pinch
+  /// and pan zoom, plus actions to open it in a new tab, save it, or
+  /// copy its link. The inline bubble stays a small cropped preview;
+  /// tapping it is the only way to see the whole photo. The URL is
+  /// resolved to absolute form for the actions, so copy and save work
+  /// outside the app too. The image itself still loads through the
+  /// same-origin CDN path, and a failed load shows the fallback text.
+  Future<void> _showImageViewer(String url) async {
+    final absolute = Uri.base.resolve(url).toString();
+    final label = _imageLabel(url);
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (d) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(d).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white70),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+            Flexible(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4,
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('Image could not be loaded',
+                        style: TextStyle(color: Colors.white70)),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 10),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  TextButton.icon(
+                    onPressed: () async {
+                      final uri = Uri.tryParse(absolute);
+                      if (uri != null) {
+                        await launchUrl(uri,
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: const Text('Open in new tab'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      downloadFile(absolute, label);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Saving image...')),
+                      );
+                    },
+                    icon: const Icon(Icons.download, size: 16),
+                    label: const Text('Save'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                          ClipboardData(text: absolute));
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Image link copied')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.link, size: 16),
+                    label: const Text('Copy link'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _chatBubble(ChatMessage m, bool own) {
     final bg = own ? kBrand : yptCard2Color(context);
     final fg = own ? Colors.white : (Theme.of(context).brightness == Brightness.light ? Colors.grey[800] : Colors.grey[100]);
@@ -1873,12 +1979,32 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     } else if (m.isImage) {
       content = ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          m.displayImageUrl!,
-          height: 180,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              _imageLoadFallback(m.displayImageUrl!, own),
+        child: GestureDetector(
+          onTap: () => _showImageViewer(m.displayImageUrl!),
+          child: Stack(
+            children: [
+              Image.network(
+                m.displayImageUrl!,
+                height: 180,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    _imageLoadFallback(m.displayImageUrl!, own),
+              ),
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.zoom_in,
+                      size: 16, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     } else {
