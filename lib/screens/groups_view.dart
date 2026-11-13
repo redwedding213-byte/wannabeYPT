@@ -65,6 +65,18 @@ class _SectionTitle extends StatelessWidget {
       );
 }
 
+/// Last-message preview for a group card, same wording as the chat
+/// toast: stickers and photos get a label, text shows as
+/// "sender: message", trimmed.
+String _lastMessagePreview(ChatMessage m) {
+  if (m.isSticker) return '${m.senderName} sent a sticker';
+  if (m.isImage) return '${m.senderName} sent a photo';
+  final t = m.text.trim();
+  if (t.isEmpty) return '';
+  final shown = t.length > 80 ? '${t.substring(0, 80)}…' : t;
+  return '${m.senderName}: $shown';
+}
+
 class _GroupCard extends StatelessWidget {
   final Group group;
   final bool joined;
@@ -72,30 +84,66 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final st = context.watch<AppState>();
+    final unread = st.groupUnread[group.id] ?? 0;
+    final last = st.groupLastMessage[group.id];
+    final preview = last == null ? '' : _lastMessagePreview(last);
     // Official style: a flat text row, no card, title, then one grey
-    // meta line (category · owner). The rounded InkWell matters on
-    // web: without it the hover highlight is a square-cornered band.
+    // meta line (category · owner), then the latest message. The
+    // rounded InkWell matters on web: without it the hover highlight
+    // is a square-cornered band.
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => GroupRoomScreen(group: group))),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 13),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(group.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 15.5, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 3),
-            Text(
-                '${group.category.isNotEmpty ? '${group.category} · ' : ''}'
-                '${group.owner}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: yptGrey500(context), fontSize: 12.5)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(group.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 15.5, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 3),
+                  Text(
+                      '${group.category.isNotEmpty ? '${group.category} · ' : ''}'
+                      '${group.owner}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: yptGrey500(context), fontSize: 12.5)),
+                  if (preview.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(preview,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: yptGrey500(context), fontSize: 12.5)),
+                  ],
+                ],
+              ),
+            ),
+            if (unread > 0)
+              Container(
+                margin: const EdgeInsets.only(left: 10, top: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: kBrand,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(unread > 99 ? '99+' : '$unread',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700)),
+              ),
           ],
         ),
       ),

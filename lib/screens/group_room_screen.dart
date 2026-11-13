@@ -93,6 +93,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     // The background chat poller skips this group while the room is
     // open, so a message you are already looking at never toasts.
     context.read<AppState>().chatRoomOpenGroupId = widget.group.id;
+    // Opening the room marks the group read, so the Groups tab
+    // badge clears at once.
+    context.read<AppState>().markGroupRead(widget.group.id);
     _tab = widget.initialTab;
     if (_tab == 4) _startChatPoll();
     _load();
@@ -127,6 +130,14 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     if (st.chatRoomOpenGroupId == widget.group.id) {
       st.chatRoomOpenGroupId = null;
     }
+    // Leaving the room: mark read up to the newest message the
+    // room displayed, so messages read here never linger as
+    // unread on the Groups tab.
+    final maxChatId = _chatMessages
+        ?.where((m) => m.id > 0)
+        .map((m) => m.id)
+        .fold<int>(0, (a, b) => a > b ? a : b);
+    st.markGroupRead(widget.group.id, upToId: maxChatId);
     st.clearChatBaseline(widget.group.id);
     _chatCtrl.dispose();
     _chatScroll.dispose();

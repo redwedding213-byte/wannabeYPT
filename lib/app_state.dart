@@ -291,6 +291,140 @@ class AppState extends ChangeNotifier {
     _chatLastSeen.remove(groupId);
   }
 
+  // ── Group unread counts + last-message preview (Ishu Kr) ──
+  // Local only, no server change. The Groups tab badge counts
+  // fetched messages above the persisted last-read id for the
+  // group, excluding own messages and system notices. It runs on
+  // its own light poller so badges work even when chat toasts are
+  // off: toasts need browser permission, badges must not. The
+  // toast poller's _chatLastSeen baseline is never written here,
+  // only read as one input to markGroupRead, so toasts are
+  // untouched.
+  Map<int, int> groupUnread = {};
+  Map<int, ChatMessage> groupLastMessage = {};
+  final Map<int, int> _chatLastRead = {};
+  final Map<int, int> _chatLastFetched = {};
+  Timer? _groupChatPoll;
+  int _groupChatIndex = 0;
+  bool _groupChatBusy = false;
+
+  /// Persisted last-read ids: one int per group. Loaded once the
+  /// joined groups are known.
+  Future<void> _loadChatLastRead() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      for (final g in joinedGroups) {
+        final v = sp.getInt('chat_last_read_${g.id}');
+        if (v != null && v > 0) _chatLastRead[g.id] = v;
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveChatLastRead(int groupId) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final v = _chatLastRead[groupId];
+      if (v == null) {
+        await sp.remove('chat_last_read_$groupId');
+      } else {
+        await sp.setInt('chat_last_read_$groupId', v);
+      }
+    } catch (_) {}
+  }
+
+  /// Fold one fetched batch of a group's chat into the badge state:
+  /// remember the newest message for the card preview and count
+  /// messages above the persisted last-read id. The first sight of
+  /// a group seeds last-read at the newest id, so old messages
+  /// never show as unread: the web app cannot know what was read
+  /// in the official app. Notifies listeners only on a change.
+  void _updateGroupChatState(Group group, List<ChatMessage> msgs) {
+    final valid = msgs.where((m) => m.id > 0).toList()
+      ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+    if (valid.isEmpty) return;
+    final maxId = valid.map((m) => m.id).reduce((a, b) => a > b ? a : b);
+    final prevUnread = groupUnread[group.id];
+    final prevLastId = groupLastMessage[group.id]?.id;
+    _chatLastFetched[group.id] = maxId;
+    groupLastMessage[group.id] = valid.last;
+    final lastRead = _chatLastRead[group.id];
+    if (lastRead == null) {
+      _chatLastRead[group.id] = maxId;
+      groupUnread[group.id] = 0;
+      unawaited(_saveChatLastRead(group.id));
+    } else {
+      final mine = user?.nickname;
+      groupUnread[group.id] = valid
+          .where((m) =>
+              m.id > lastRead && !m.isNotice && m.senderName != mine)
+          .length;
+    }
+    if (groupUnread[group.id] != prevUnread ||
+        groupLastMessage[group.id]?.id != prevLastId) {
+      notifyListeners();
+    }
+  }
+
+  void _maybeStartGroupChatPoll() {
+    if (user == null || _groupChatPoll != null || joinedGroups.isEmpty) {
+      return;
+    }
+    _groupChatPoll =
+        Timer.periodic(const Duration(seconds: 5), (_) => _groupChatTick());
+    unawaited(_groupChatTick());
+  }
+
+  void _stopGroupChatPolling() {
+    _groupChatPoll?.cancel();
+    _groupChatPoll = null;
+  }
+
+  /// One tick: poll the next group in rotation (skipping the room
+  /// that is open right now, the user is reading it). A failed tick
+  /// is silent: the next tick retries.
+  Future<void> _groupChatTick() async {
+    if (user == null || _groupChatBusy || joinedGroups.isEmpty) return;
+    Group? next;
+    for (var i = 0; i < joinedGroups.length; i++) {
+      _groupChatIndex = (_groupChatIndex + 1) % joinedGroups.length;
+      final g = joinedGroups[_groupChatIndex];
+      if (g.id != chatRoomOpenGroupId) {
+        next = g;
+        break;
+      }
+    }
+    if (next == null) return;
+    final group = next;
+    _groupChatBusy = true;
+    try {
+      final res = await api.fetchChatMessages(group.id);
+      if (res.httpOk) _updateGroupChatState(group, res.messages);
+    } catch (_) {
+      // Silent: the next tick retries.
+    } finally {
+      _groupChatBusy = false;
+    }
+  }
+
+  /// Mark a group read: last-read jumps to the newest message the
+  /// app has fetched for it (or [upToId] when the room hands over a
+  /// newer id it displayed), the badge clears, and the id persists.
+  /// When nothing has been fetched yet the badge just clears and
+  /// last-read stays unset, so the next fetch seeds it.
+  void markGroupRead(int groupId, {int? upToId}) {
+    final fetched = [
+      _chatLastFetched[groupId] ?? 0,
+      _chatLastSeen[groupId] ?? 0,
+      if (upToId != null) upToId,
+    ].reduce((a, b) => a > b ? a : b);
+    if (fetched > 0) {
+      _chatLastRead[groupId] = fetched;
+      unawaited(_saveChatLastRead(groupId));
+    }
+    groupUnread[groupId] = 0;
+    notifyListeners();
+  }
+
   /// Chat toast toggle (About dialog). Turning it on from 'default'
   /// requests permission first; without a grant it stays off.
   Future<void> setChatNotifyOn(bool value) async {
@@ -320,6 +454,8 @@ class AppState extends ChangeNotifier {
     }
     groupsLoading = false;
     _maybeStartChatPoll();
+    await _loadChatLastRead();
+    _maybeStartGroupChatPoll();
     notifyListeners();
   }
 
@@ -1080,7 +1216,12 @@ class AppState extends ChangeNotifier {
     // to the account and sync on the next login.
     _stopSyncRetryTimer();
     _stopChatPolling();
+    _stopGroupChatPolling();
     _chatLastSeen.clear();
+    groupUnread.clear();
+    groupLastMessage.clear();
+    _chatLastRead.clear();
+    _chatLastFetched.clear();
     chatOpenRequest.value = null;
     chatRoomOpenGroupId = null;
     pendingSyncCount = 0;
