@@ -1297,12 +1297,41 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
   }
 
   void _maybeScrollChatToBottom({bool force = false}) {
+    if (force) {
+      _jumpChatToBottomStable(0);
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_chatScroll.hasClients) return;
       final pos = _chatScroll.position;
       final nearBottom = pos.pixels >= pos.maxScrollExtent - 200;
-      if (force || nearBottom) {
+      if (nearBottom) {
         if (pos.maxScrollExtent > 0) _chatScroll.jumpTo(pos.maxScrollExtent);
+      }
+    });
+  }
+
+  /// Forced jump to the newest message, repeated over frames. A
+  /// lazy ListView only builds the visible rows plus a small cache,
+  /// so maxScrollExtent is an estimate that grows as more rows
+  /// build: one jump lands partway down a long history (days back),
+  /// and the user has to scroll again and again. Jumping again
+  /// each frame until the extent stops growing lands on the latest
+  /// message, like the official app.
+  void _jumpChatToBottomStable(int attempt) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_chatScroll.hasClients) return;
+      final pos = _chatScroll.position;
+      if (pos.maxScrollExtent <= 0) return;
+      _chatScroll.jumpTo(pos.maxScrollExtent);
+      if (attempt < 15) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_chatScroll.hasClients) return;
+          final p = _chatScroll.position;
+          if (p.pixels < p.maxScrollExtent - 1) {
+            _jumpChatToBottomStable(attempt + 1);
+          }
+        });
       }
     });
   }
@@ -1368,6 +1397,7 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     final myId = _myId;
     final reacted =
         myId > 0 && (m.reactions[emoji] ?? const []).contains(myId);
+    final original = Map<String, List<int>>.from(m.reactions);
     final updated = Map<String, List<int>>.from(m.reactions);
     if (myId > 0) {
       if (reacted) {
@@ -1395,10 +1425,34 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     if (!mounted) return;
     setState(() => _reacting.remove(m.id));
     if (!ok) {
-      setState(
-          () => _chatNotice = 'Could not send that reaction, try again.');
+      // The server never stored it: drop the optimistic reaction
+      // at once, so the web UI never shows a reaction the official
+      // app will not.
+      setState(() {
+        _chatMessages = _chatMessages
+            ?.map((x) => x.id == m.id ? x.copyWith(reactions: original) : x)
+            .toList();
+        _chatNotice = 'Could not send that reaction, try again.';
+      });
+      return;
     }
     await _loadChat(silent: true);
+    if (!mounted) return;
+    // The reload is the truth: if the server's fresh list does
+    // not carry the reaction, it was not stored and the official
+    // app will never show it, so say so instead of leaving a
+    // silent miss. Only checked when the reload worked and our
+    // own id is known.
+    if (!_chatError && myId > 0) {
+      final fresh =
+          _chatMessages?.where((x) => x.id == m.id).toList() ?? const [];
+      final hasMe = fresh.isNotEmpty &&
+          (fresh.first.reactions[emoji] ?? const []).contains(myId);
+      if (hasMe == reacted) {
+        setState(() => _chatNotice =
+            'That reaction did not stick on the server, so the official app will not show it.');
+      }
+    }
   }
 
   void _showReactionPicker(ChatMessage m) {

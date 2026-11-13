@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showWhatsNew = false;
   // "What's new" strip: once per account, like the YES banner, and
   // never after this moment. 2026-11-14 21:45 IST is 16:15 UTC.
-  static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 14, 16, 15);
+  static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 14, 17, 0);
   String? _bannerCheckedNick;
   bool _chatNotifyAskTried = false;
 
@@ -63,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Mark it seen the moment it is shown, so the next open never
     // shows it again, even inside the 24 hour window.
     if (DateTime.now().isBefore(_whatsNewExpiry) &&
-        sp.getBool('whatsNewSeen4_$nick') != true) {
-      await sp.setBool('whatsNewSeen4_$nick', true);
+        sp.getBool('whatsNewSeen5_$nick') != true) {
+      await sp.setBool('whatsNewSeen5_$nick', true);
       if (mounted) setState(() => _showWhatsNew = true);
     }
   }
@@ -282,8 +282,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// "What's new" strip at the top of Home. Lives for 24 hours from
-  /// the deploy (until 2026-11-14 21:45 IST) and shows at most once
-  /// per account: the flag whatsNewSeen4_<nickname> is set the moment
+  /// the deploy (until 2026-11-14 22:30 IST) and shows at most once
+  /// per account: the flag whatsNewSeen5_<nickname> is set the moment
   /// it is shown, so later opens never show it again. The close
   /// button only hides it for the current session. Text has no dash
   /// characters anywhere, by request.
@@ -307,12 +307,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Chat photos now open in a full viewer with zoom, save, and copy.',
+                  'Every group card now has a chat button that jumps straight to the chat.',
                   style:
                       TextStyle(fontSize: 12, color: yptGrey500(context)),
                 ),
                 Text(
-                  'Chat notifications now catch up after the tab was in the background. Thanks to Ishu Kr.',
+                  'Opening a chat now lands on the latest message instead of days back.',
+                  style:
+                      TextStyle(fontSize: 12, color: yptGrey500(context)),
+                ),
+                Text(
+                  'Reactions now tell you straight away if the server did not save them. Thanks to Ishu Kr.',
                   style:
                       TextStyle(fontSize: 12, color: yptGrey500(context)),
                 ),

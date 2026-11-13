@@ -129,21 +129,43 @@ class _GroupCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (unread > 0)
-              Container(
-                margin: const EdgeInsets.only(left: 10, top: 2),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: kBrand,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(unread > 99 ? '99+' : '$unread',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700)),
-              ),
+            // Right side: the unread count pill when there is one,
+            // and a chat button that jumps straight to this group's
+            // chat tab, like the official app. The button only shows
+            // for joined groups; search results stay read-only.
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (unread > 0)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6, top: 2),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: kBrand,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(unread > 99 ? '99+' : '$unread',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                if (joined)
+                  IconButton(
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => GroupRoomScreen(
+                                group: group, initialTab: 4))),
+                    icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                    color: kBrand,
+                    tooltip: 'Open chat',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
