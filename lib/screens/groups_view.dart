@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
-import '../main.dart' show kBrand, yptCardColor, yptGrey500, yptGrey600;
+import '../main.dart' show kBrand, yptCardColor, yptGrey400, yptGrey500, yptGrey600;
 import 'group_room_screen.dart';
 
 class GroupsView extends StatefulWidget {
@@ -131,15 +131,17 @@ class _GroupCard extends StatelessWidget {
             ),
             // Right side: the unread count pill when there is one,
             // and a chat button that jumps straight to this group's
-            // chat tab, like the official app. The button only shows
-            // for joined groups; search results stay read-only.
+            // chat tab, like the official app. The button is a dark
+            // rounded-square tile with a speech bubble, matching the
+            // official app's look. It only shows for joined groups;
+            // search results stay read-only.
             Row(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (unread > 0)
                   Container(
-                    margin: const EdgeInsets.only(right: 6, top: 2),
+                    margin: const EdgeInsets.only(right: 8, top: 15),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
@@ -153,16 +155,31 @@ class _GroupCard extends StatelessWidget {
                             fontWeight: FontWeight.w700)),
                   ),
                 if (joined)
-                  IconButton(
-                    onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (_) => GroupRoomScreen(
-                                group: group, initialTab: 4))),
-                    icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                    color: kBrand,
-                    tooltip: 'Open chat',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                  Tooltip(
+                    message: 'Open chat',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => GroupRoomScreen(
+                                    group: group, initialTab: 4))),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness ==
+                                    Brightness.dark
+                                ? const Color(0xFF2C2C2E)
+                                : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.chat_bubble,
+                              size: 22, color: yptGrey400(context)),
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),
