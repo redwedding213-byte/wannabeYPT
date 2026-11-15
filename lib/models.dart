@@ -522,6 +522,12 @@ class GroupMember {
   final DateTime? startedAt; // dl.st, 최근 세션 시작 (UTC)
   final DateTime? stoppedAt; // dl.sp, 최근 세션 종료 (UTC)
   final int studiconId; // si, top-level when the payload carries it, else 0 (no doll)
+  final bool inApp; // dl.ia, 앱을 켜고 있는 중. True while the member
+  // has the YPT app open on their phone right now. The official app
+  // shows a phone icon instead of the doll for these members.
+  final int allowedAppsMs; // dl.am, 오늘 허용 앱 사용 시간
+  final int maxFocusMs; // dl.mm, 오늘 최장 집중 시간
+  final int camMs; // dl.cm, 오늘 캠 스터디 시간
 
   GroupMember({
     required this.userId,
@@ -532,6 +538,10 @@ class GroupMember {
     this.startedAt,
     this.stoppedAt,
     this.studiconId = 0,
+    this.inApp = false,
+    this.allowedAppsMs = 0,
+    this.maxFocusMs = 0,
+    this.camMs = 0,
   });
 
   factory GroupMember.fromJson(Map<String, dynamic> j) {
@@ -540,6 +550,10 @@ class GroupMember {
     DateTime? st;
     DateTime? sp;
     var si = intValue(j['si']);
+    bool inApp = false;
+    int allowedAppsMs = 0;
+    int maxFocusMs = 0;
+    int camMs = 0;
     if (j['dl'] is Map<String, dynamic>) {
       final dl = j['dl'] as Map<String, dynamic>;
       sm = intValue(dl['sm']);
@@ -547,6 +561,10 @@ class GroupMember {
       st = DateTime.tryParse(stringValue(dl['st']));
       sp = DateTime.tryParse(stringValue(dl['sp']));
       if (si <= 0) si = intValue(dl['si']);
+      inApp = boolValue(dl['ia']);
+      allowedAppsMs = intValue(dl['am']);
+      maxFocusMs = intValue(dl['mm']);
+      camMs = intValue(dl['cm']);
     }
     return GroupMember(
       userId: intValue(j['ud']),
@@ -557,6 +575,10 @@ class GroupMember {
       startedAt: st,
       stoppedAt: sp,
       studiconId: si,
+      inApp: inApp,
+      allowedAppsMs: allowedAppsMs,
+      maxFocusMs: maxFocusMs,
+      camMs: camMs,
     );
   }
 

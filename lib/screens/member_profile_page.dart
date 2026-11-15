@@ -256,13 +256,7 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                     SizedBox(
                       width: 64,
                       height: 48,
-                      child: live
-                          ? const Icon(Icons.stay_current_portrait,
-                              color: kBrand, size: 42)
-                          : CustomPaint(
-                              size: const Size(64, 48),
-                              painter: _DeskGlyphPainter(),
-                            ),
+                      child: _headerAvatar(live, displayMs),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -317,6 +311,10 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
                             ])),
                   ],
                 ),
+                if (displayMs > 0) ...[
+                  const SizedBox(height: 18),
+                  _todayStatsCard(),
+                ],
                 const SizedBox(height: 26),
                 if (!widget.isMe) ...[
                   SizedBox(
@@ -535,6 +533,88 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
       crossAxisSpacing: 5,
       childAspectRatio: 1.05,
       children: cells,
+    );
+  }
+
+  /// Header avatar, like the official app: a phone icon while the
+  /// member studies with the YPT app open on their phone, their doll
+  /// with its pose while studying with the phone away, the grey desk
+  /// when not studying.
+  Widget _headerAvatar(bool live, int displayMs) {
+    if (live && m.inApp) {
+      return const Icon(Icons.stay_current_portrait,
+          color: kBrand, size: 42);
+    }
+    if (live) {
+      final poseFile =
+          studiconPoseFile(studying: true, studyMs: displayMs);
+      if (m.studiconId > 0) {
+        return Image.network(
+          studiconUrl(m.studiconId, poseFile),
+          height: 48,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => _defaultDoll(poseFile),
+        );
+      }
+      return _defaultDoll(poseFile);
+    }
+    return CustomPaint(
+      size: const Size(64, 48),
+      painter: _DeskGlyphPainter(),
+    );
+  }
+
+  Widget _defaultDoll(String poseFile) {
+    return Image.asset(
+      defaultStudiconAsset(poseFile: poseFile, studying: true),
+      height: 48,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => CustomPaint(
+        size: const Size(64, 48),
+        painter: _DeskGlyphPainter(),
+      ),
+    );
+  }
+
+  /// Today's extra stats from the member's day log, like the official
+  /// app's profile sheet: longest focus stretch, time in allowed
+  /// apps, and cam study time.
+  Widget _todayStatsCard() {
+    Widget cell(String label, String value) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: const TextStyle(color: kBrand, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(value,
+                style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: [FontFeature.tabularFigures()])),
+          ],
+        );
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: yptCardColor(context),
+          borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: cell('Max focus', fmtMs(m.maxFocusMs))),
+              Expanded(child: cell('Allowed Apps', fmtMs(m.allowedAppsMs))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: cell('Cam Study time', fmtMs(m.camMs))),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

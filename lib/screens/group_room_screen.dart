@@ -2336,8 +2336,12 @@ class _MemberTile extends StatelessWidget {
   /// come from the studicon CDN; the default doll (no id) uses the
   /// bundled official default character, which also changes pose
   /// with study time. A failed CDN image falls back to the matching
-  /// bundled character, then to the vector YPT desk.
+  /// bundled character, then to the vector YPT desk. One exception,
+  /// like the official app: a member studying with the YPT app open
+  /// on their phone right now shows a plain phone outline instead
+  /// of the doll.
   Widget _avatar() {
+    if (studying && member.inApp) return _phoneIcon();
     final si = member.studiconId;
     final poseFile =
         studiconPoseFile(studying: studying, studyMs: displayMs);
@@ -2356,6 +2360,50 @@ class _MemberTile extends StatelessWidget {
       height: 36,
       fit: BoxFit.contain,
       errorBuilder: (_, __, ___) => fallback,
+    );
+  }
+
+  /// Plain phone outline, like the official app shows for a member
+  /// studying with the YPT app open on their phone.
+  Widget _phoneIcon() {
+    return SizedBox(
+      width: 22,
+      height: 36,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 22,
+            height: 36,
+            decoration: BoxDecoration(
+              border: Border.all(color: kBrand, width: 1.8),
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+          Positioned(
+            top: 5,
+            child: Container(
+              width: 8,
+              height: 2,
+              decoration: BoxDecoration(
+                color: kBrand,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 4,
+            child: Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                border: Border.all(color: kBrand, width: 1.4),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
