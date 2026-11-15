@@ -366,15 +366,22 @@ class _AvatarStorePageState extends State<AvatarStorePage>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Image.network(
-              item.previewUrl,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => Icon(
-                Icons.person_outline,
-                size: 56,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
-              ),
-            ),
+            child: item.id <= 0
+                // Default doll: no CDN image exists (sc.v2/-1/* 404),
+                // so show the bundled official default character.
+                ? Image.asset(
+                    'assets/images/studicon/ic_user_on_s.png',
+                    fit: BoxFit.contain,
+                  )
+                : Image.network(
+                    item.previewUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.person_outline,
+                      size: 56,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+                    ),
+                  ),
           ),
           const SizedBox(height: 6),
           Tooltip(

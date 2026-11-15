@@ -461,6 +461,40 @@ class Group {
 String studiconUrl(int studiconId, String poseFile) =>
     '/sc.v2/$studiconId/$poseFile';
 
+/// Bundled default-character image for a user with no store doll
+/// equipped (studicon id <= 0). The official app ships these in the
+/// APK; they are NOT on the CDN (sc.v2/-1/* all 404), so the default
+/// doll used to show a static glyph that never changed pose. Files
+/// are the official YPT default-character assets, same set Desky
+/// bundles. Mapping follows Desky's defaultStudiconAsset: sweat poses
+/// share one image, smoke poses share one, ignite/fire/explosion
+/// share one. So the visible changes land at 1h (sweat), 4h (smoke)
+/// and 6h (fire), on top of the per-hour CDN pose steps for store
+/// dolls.
+String defaultStudiconAsset({required String poseFile, required bool studying}) {
+  if (!studying && poseFile == 'normal1.png') {
+    return 'assets/images/studicon/ic_user_off_s.png';
+  }
+  switch (poseFile) {
+    case 'sweat1.png':
+    case 'sweat2.png':
+    case 'sweat3.png':
+      return 'assets/images/studicon/ic_user_sweat_s.png';
+    case 'smoke1.png':
+    case 'smoke2.png':
+      return 'assets/images/studicon/ic_user_smoke_s.png';
+    case 'ignite1.png':
+    case 'ignite2.png':
+    case 'fire1.png':
+    case 'explosion1.png':
+      return 'assets/images/studicon/ic_user_fire_s.png';
+    default:
+      return studying
+          ? 'assets/images/studicon/ic_user_on_s.png'
+          : 'assets/images/studicon/ic_user_off_s.png';
+  }
+}
+
 /// Doll pose file for a study state, following the official app's
 /// time thresholds: under 1h normal, then sweat (1/2/3h), smoke
 /// (4/5h), ignite (6/7h), fire (8h), explosion (10h+). Not studying
@@ -1550,9 +1584,13 @@ class StudiconItem {
     this.isEquipped = false,
   });
 
-  /// Doll preview from the official avatar CDN.
-  /// id -1 is the default orange doll (sc.v2/-1/normal1.png).
-  String get previewUrl => studiconUrl(id, 'normal1.png');
+  /// Doll preview from the official avatar CDN. id -1 is the default
+  /// doll, which has NO CDN image (sc.v2/-1/* all 404); its preview
+  /// is the bundled official default character, see
+  /// defaultStudiconAsset. Only store dolls (id > 0) preview from
+  /// the CDN.
+  String get previewUrl =>
+      id <= 0 ? 'assets/images/studicon/ic_user_on_s.png' : studiconUrl(id, 'normal1.png');
 
   factory StudiconItem.fromJson(Map<String, dynamic> j) {
     final rawTags = j['tg'];

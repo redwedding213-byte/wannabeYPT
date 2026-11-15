@@ -2332,18 +2332,30 @@ class _MemberTile extends StatelessWidget {
     );
   }
 
-  /// Doll avatar from the studicon CDN when the payload carries a
-  /// studicon id, pose by live state and today's time. Falls back to
-  /// the vector YPT desk when there is no id or the image fails to load.
+  /// Doll avatar, pose by live state and today's time. Store dolls
+  /// come from the studicon CDN; the default doll (no id) uses the
+  /// bundled official default character, which also changes pose
+  /// with study time. A failed CDN image falls back to the matching
+  /// bundled character, then to the vector YPT desk.
   Widget _avatar() {
     final si = member.studiconId;
-    if (si <= 0) return _glyph();
-    return Image.network(
-      studiconUrl(
-          si, studiconPoseFile(studying: studying, studyMs: displayMs)),
+    final poseFile =
+        studiconPoseFile(studying: studying, studyMs: displayMs);
+    final fallback = Image.asset(
+      defaultStudiconAsset(poseFile: poseFile, studying: studying),
       height: 36,
       fit: BoxFit.contain,
       errorBuilder: (_, __, ___) => _glyph(),
+    );
+    // Default doll (no store doll equipped): the official default
+    // character, bundled in the app because it has no CDN image.
+    // Its pose changes with study time, like the official app.
+    if (si <= 0) return fallback;
+    return Image.network(
+      studiconUrl(si, poseFile),
+      height: 36,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => fallback,
     );
   }
 

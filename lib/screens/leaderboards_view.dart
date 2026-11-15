@@ -175,6 +175,31 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
     );
   }
 
+  /// Rank doll, pose by today's study time. Store dolls come from
+  /// the studicon CDN; the default doll (no id) uses the bundled
+  /// official default character, which also changes pose with study
+  /// time. A failed CDN image falls back to the matching bundled
+  /// character.
+  Widget _rankDoll(RankMember m) {
+    final poseFile =
+        studiconPoseFile(studying: true, studyMs: m.studyMs);
+    final fallback = Image.asset(
+      defaultStudiconAsset(poseFile: poseFile, studying: true),
+      width: 30,
+      height: 30,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const SizedBox(width: 30),
+    );
+    if (m.studiconId <= 0) return fallback;
+    return Image.network(
+      studiconUrl(m.studiconId, poseFile),
+      width: 30,
+      height: 30,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => fallback,
+    );
+  }
+
   Widget _rankRow(int rank, RankMember m) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -193,20 +218,10 @@ class _LeaderboardsPageState extends State<LeaderboardsPage> {
                     fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 10),
-          if (m.studiconId > 0)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Image.network(
-                studiconUrl(
-                    m.studiconId,
-                    studiconPoseFile(
-                        studying: true, studyMs: m.studyMs)),
-                width: 30,
-                height: 30,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const SizedBox(width: 30),
-              ),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _rankDoll(m),
+          ),
           Expanded(
             child: Text(m.nickname,
                 overflow: TextOverflow.ellipsis,
