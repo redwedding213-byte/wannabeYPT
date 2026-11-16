@@ -31,8 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _bannerFollowUp = false;
   bool _showWhatsNew = false;
   // "What's new" strip: once per account, like the YES banner, and
-  // never after this moment. 2026-11-17 01:00 IST is 2026-11-16 19:30 UTC.
-  static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 16, 19, 30);
+  // never after this moment. 2026-11-17 13:10 IST is 2026-11-17 07:40 UTC.
+  static final DateTime _whatsNewExpiry = DateTime.utc(2026, 11, 17, 7, 40);
   String? _bannerCheckedNick;
   bool _chatNotifyAskTried = false;
 
@@ -63,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Mark it seen the moment it is shown, so the next open never
     // shows it again, even inside the 24 hour window.
     if (DateTime.now().isBefore(_whatsNewExpiry) &&
-        sp.getBool('whatsNewSeen8_$nick') != true) {
-      await sp.setBool('whatsNewSeen8_$nick', true);
+        sp.getBool('whatsNewSeen9_$nick') != true) {
+      await sp.setBool('whatsNewSeen9_$nick', true);
       if (mounted) setState(() => _showWhatsNew = true);
     }
   }
@@ -282,8 +282,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// "What's new" strip at the top of Home. Lives for 24 hours from
-  /// the deploy (until 2026-11-17 01:00 IST) and shows at most once
-  /// per account: the flag whatsNewSeen8_<nickname> is set the moment
+  /// the deploy (until 2026-11-17 13:10 IST) and shows at most once
+  /// per account: the flag whatsNewSeen9_<nickname> is set the moment
   /// it is shown, so later opens never show it again. The close
   /// button only hides it for the current session. Text has no dash
   /// characters anywhere, by request.
@@ -307,12 +307,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Members studying with the YPT app open on their phone now show a phone icon instead of their doll, like the official app.',
+                  'Group rankings now have a Monthly view too, thanks to NONZENO. Daily, Weekly and Monthly totals in the Rankings tab.',
                   style:
                       TextStyle(fontSize: 12, color: yptGrey500(context)),
                 ),
                 Text(
-                  'Tapping a member now also shows their Max focus, Allowed Apps and Cam Study time.',
+                  'Tapping a member now also shows their month total in their profile.',
                   style:
                       TextStyle(fontSize: 12, color: yptGrey500(context)),
                 ),

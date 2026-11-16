@@ -90,6 +90,8 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
   final Map<String, int> _weekMs = {};
   int _weekAggregate = 0;
   bool _weekLoading = true;
+  int _monthAggregate = 0;
+  bool _monthFound = false;
   final Map<String, DayDetail> _days = {};
   bool _monthLoading = false;
   DateTime _selected = DateTime.now();
@@ -193,6 +195,21 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
       for (final r in week) {
         if (_isMember(r)) _weekAggregate = r.studyMs;
       }
+      // Month aggregate (1st-anchored) for the "Month total" line.
+      // Own try, so a month failure never takes the week view down
+      // with it. If the server omits this member, the line stays
+      // hidden instead of showing a wrong 0.
+      try {
+        final first = DateTime(now.year, now.month, 1);
+        final month = await st.fetchGroupRanks(
+            widget.groupId, AppState.dateStr(first), 'month');
+        for (final r in month) {
+          if (_isMember(r)) {
+            _monthAggregate = r.studyMs;
+            _monthFound = true;
+          }
+        }
+      } catch (_) {}
       // Seed today from the member object itself, the ranks route
       // cannot be trusted to include everyone.
       final todayKey = AppState.dateStr(today);
@@ -419,6 +436,11 @@ class _MemberProfilePanelState extends State<MemberProfilePanel> {
         const SizedBox(height: 16),
         Text('Week total ${_fmtHM(weekTotal)}',
             style: TextStyle(color: yptGrey400(context), fontSize: 13)),
+        if (_monthFound) ...[
+          const SizedBox(height: 6),
+          Text('Month total ${_fmtHM(_monthAggregate)}',
+              style: TextStyle(color: yptGrey400(context), fontSize: 13)),
+        ],
         const SizedBox(height: 22),
         Text('Full history for other members is only in the official app.',
             style: TextStyle(color: yptGrey600(context), fontSize: 12)),

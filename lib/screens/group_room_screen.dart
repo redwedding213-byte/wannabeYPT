@@ -83,6 +83,18 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
   Map<String, int> _weekTotals = {};
   Map<String, Map<String, int>> _weekDaily = {};
 
+  // Monthly data: one type=month ranks call anchored on the 1st of
+  // the month, same route as the week call. Totals only, no
+  // attendance table, the month view is a ranking list.
+  bool _monthLoading = false;
+  bool _monthTried = false;
+  bool _monthRankOk = false;
+  List<GroupMember> _monthMembers = [];
+  Map<String, int> _monthTotals = {};
+
+  Map<String, GroupMember> get _monthByNick =>
+      {for (final m in _monthMembers) m.nickname: m};
+
   @override
   void initState() {
     super.initState();
@@ -176,6 +188,9 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
     if ((i == 1 || (i == 2 && _rankMode == 'Weekly')) && !_weekTried) {
       _loadWeek();
     }
+    if (i == 2 && _rankMode == 'Monthly' && !_monthTried) {
+      _loadMonth();
+    }
   }
 
   Future<void> _loadWeek() async {
@@ -266,6 +281,37 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
       _attOk = attOk;
       _weekTried = true;
       _weekLoading = false;
+    });
+  }
+
+  Future<void> _loadMonth() async {
+    if (_monthTried || _monthLoading) return;
+    _monthLoading = true;
+    if (mounted) setState(() {});
+    final st = context.read<AppState>();
+    final now = DateTime.now();
+    final first = DateTime(now.year, now.month, 1);
+    var rankOk = false;
+    var monthMembers = <GroupMember>[];
+    final totals = <String, int>{};
+    try {
+      // Month totals: one ranks call anchored on the 1st, the only
+      // date the server accepts for type=month (Desky anchors the
+      // same way). Members the server omits simply do not appear.
+      monthMembers = await st.fetchGroupRanks(
+          widget.group.id, AppState.dateStr(first), 'month');
+      for (final m in monthMembers) {
+        totals[m.nickname] = m.studyMs;
+      }
+      rankOk = monthMembers.isNotEmpty;
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _monthTotals = totals;
+      _monthMembers = monthMembers;
+      _monthRankOk = rankOk;
+      _monthTried = true;
+      _monthLoading = false;
     });
   }
 
@@ -1029,13 +1075,24 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
                   if (!_weekTried) _loadWeek();
                 },
               ),
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: const Text('Monthly'),
+                selected: _rankMode == 'Monthly',
+                onSelected: (_) {
+                  setState(() => _rankMode = 'Monthly');
+                  if (!_monthTried) _loadMonth();
+                },
+              ),
             ],
           ),
         ),
         Expanded(
           child: _rankMode == 'Daily'
               ? _dailyRankings(myNick)
-              : _weeklyRankings(myNick),
+              : _rankMode == 'Weekly'
+                  ? _weeklyRankings(myNick)
+                  : _monthlyRankings(myNick),
         ),
       ],
     );
@@ -1099,6 +1156,50 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
         Row(
           children: [
             Text('Week total ${fmtMs(total)}',
+                style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
+            const SizedBox(width: 14),
+            Text('Average ${fmtMs(avg)}',
+                style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
+            const Spacer(),
+            if (myRank >= 0)
+              Text('My rank #${myRank + 1}',
+                  style: const TextStyle(
+                      color: kBrand,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        for (var i = 0; i < sorted.length; i++)
+          _rankRow(
+              i + 1,
+              sorted[i].key,
+              byNick[sorted[i].key]?.liveDisplayMs(now) ?? sorted[i].value,
+              live: byNick[sorted[i].key]?.isLive ?? false,
+              category: byNick[sorted[i].key]?.category ?? '',
+              isMe: sorted[i].key == myNick),
+      ],
+    );
+  }
+
+  Widget _monthlyRankings(String? myNick) {
+    if (_monthLoading || !_monthTried) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!_monthRankOk) return _monthUnavailable();
+    final now = DateTime.now();
+    final byNick = _monthByNick;
+    final sorted = _monthTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final total = sorted.fold(0, (a, e) => a + e.value);
+    final avg = sorted.isEmpty ? 0 : total ~/ sorted.length;
+    final myRank = sorted.indexWhere((e) => e.key == myNick);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+      children: [
+        Row(
+          children: [
+            Text('Month total ${fmtMs(total)}',
                 style: TextStyle(color: yptGrey400(context), fontSize: 12.5)),
             const SizedBox(width: 14),
             Text('Average ${fmtMs(avg)}',
@@ -1201,6 +1302,33 @@ class _GroupRoomScreenState extends State<GroupRoomScreen> {
               onPressed: () {
                 setState(() => _weekTried = false);
                 _loadWeek();
+              },
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Check again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _monthUnavailable() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Monthly data could not be loaded from the server right now. Daily and weekly rankings work as usual, try again in a bit.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: yptGrey400(context), fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() => _monthTried = false);
+                _loadMonth();
               },
               icon: const Icon(Icons.refresh, size: 16),
               label: const Text('Check again'),
