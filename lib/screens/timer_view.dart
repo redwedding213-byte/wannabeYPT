@@ -1471,6 +1471,13 @@ class _PomoPanel extends StatelessWidget {
             visualDensity: VisualDensity.compact,
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+              'Pomodoro pause only freezes the countdown, your session keeps running so TOTAL TODAY keeps counting. To stop it, tap pause on the subject row.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: yptGrey500(context))),
+        ),
         if (paused)
           Padding(
             padding: const EdgeInsets.only(top: 4),

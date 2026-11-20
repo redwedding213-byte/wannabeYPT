@@ -286,6 +286,12 @@ class _GroupSearchPageState extends State<GroupSearchPage> {
               style: const TextStyle(fontSize: 14.5),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+                'To join a group, join it in the official YPT app first, then it will show here.',
+                style: TextStyle(fontSize: 12, color: yptGrey500(context))),
+          ),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
